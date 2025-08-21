@@ -10,6 +10,12 @@ This project allows controlling the onboard NeoPixel (WS2812) LED on a Seeed Stu
 
 ## Setup
 
+### Linux Setup
+
+📅 W.I.P. - This section is a work in progress.
+
+### Windows Setup
+
 1.  **Install Board Cores and Libraries:**
     Run the `install.ps1` script to download and install the required board definitions and libraries. This only needs to be done once.
 
@@ -31,12 +37,13 @@ This project allows controlling the onboard NeoPixel (WS2812) LED on a Seeed Stu
     pwsh -nop -f ./compile.ps1 -SketchName NeoPixel_SerialControl
     ```
 
-
 ## Usage
 
 Use the `controller.ps1` script from a PowerShell terminal to control the LED.
 
 ### Examples
+
+📅 W.I.P. - This section is a work in progress. nodejs implementation is not yet complete.
 
 - **Turn LED On (Solid White)**
 
@@ -93,4 +100,72 @@ The default port is `COM6`. If your board is on a different port, use the `-Port
 
 ```powershell
 .\controller.ps1 -Port COM7 -Color Red
+```
+
+## Claude Code Hooks Setup
+
+Notify with the built-in LED for hooks of Claude code. This allows you to get a visual notification for different states of the agent.
+
+### Requirements
+
+- Seeed Studio Xiao RP2040
+- PowerShell 7
+- `claude code` with hooks support
+
+### Setup
+
+1.  Upload `NeoPixel_SerialControl/NeoPixel_SerialControl.ino` to the Xiao RP2040.
+2.  Configure claude code settings.
+
+Below is an example configuration. You can customize the `controller.ps1` commands to use different colors, blinking, or rainbow effects to your liking. For example, you could have a blinking red light for the `Stop` event and a rainbow effect for `Notification`.
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh.exe -nol -nop -f V:/poc_xiao_rp2040/controller.ps1 -Color Blue"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh.exe -nol -nop -f V:/poc_xiao_rp2040/controller.ps1 -Blink -Color Yellow -Interval 500"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Bash|Glob|Grep|Read|Edit|MultiEdit|Write|WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh.exe -nol -nop -f V:/poc_xiao_rp2040/controller.ps1 -Color Green"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh.exe -nol -nop -f V:/poc_xiao_rp2040/controller.ps1 -Color Purple"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
