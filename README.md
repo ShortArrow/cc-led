@@ -10,20 +10,27 @@ This project allows controlling the onboard NeoPixel (WS2812) LED on a Seeed Stu
 
 ## Setup
 
-1. **Initialize the Environment:**
-    The first time you use this project, you need to set up the `arduino-cli` environment. The necessary board definitions and libraries will be installed locally within the project directory.
-    *(This setup has already been completed).*
-
-2. **Upload the Sketch:**
-    The Arduino sketch `NeoPixel_SerialControl/NeoPixel_SerialControl.ino` must be uploaded to the board. This sketch listens for commands over the serial port.
+1.  **Install Board Cores and Libraries:**
+    Run the `install.ps1` script to download and install the required board definitions and libraries. This only needs to be done once.
 
     ```powershell
-    # Compile the sketch
-    arduino-cli compile --fqbn rp2040:rp2040:seeed_xiao_rp2040 NeoPixel_SerialControl --config-file arduino-cli.yaml
-
-    # Upload the sketch (replace COM6 if necessary)
-    arduino-cli upload -p COM6 --fqbn rp2040:rp2040:seeed_xiao_rp2040 NeoPixel_SerialControl --config-file arduino-cli.yaml
+    pwsh -nop -f ./install.ps1
     ```
+
+2.  **Upload the Sketch:**
+    Use the `deploy.ps1` script to upload the `NeoPixel_SerialControl` sketch to your board. You must provide the sketch name and the correct COM port for your XIAO RP2040.
+
+    ```powershell
+    pwsh -nop -f ./deploy.ps1 -SketchName NeoPixel_SerialControl -Port COM6
+    ```
+
+3.  **(Optional) Compile a Sketch:**
+    If you only want to compile a sketch to check for errors without uploading, you can use the `compile.ps1` script.
+
+    ```powershell
+    pwsh -nop -f ./compile.ps1 -SketchName NeoPixel_SerialControl
+    ```
+
 
 ## Usage
 
