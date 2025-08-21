@@ -6,15 +6,15 @@ $ErrorActionPreference = "Stop"
 
 try {
     Write-Host "Updating package index..."
-    arduino-cli core update-index
+    arduino-cli --config-file ./arduino-cli.yaml core update-index
 
     Write-Host "Installing Seeed RP2040 boards core..."
     # Install the specific core for Seeed boards, which includes XIAO RP2040
-    arduino-cli core install seeed:rp2040
+    arduino-cli --config-file ./arduino-cli.yaml core install rp2040:rp2040
 
     Write-Host "Installing 'Adafruit NeoPixel' library..."
     # This library is used by the NeoPixel_SerialControl example
-    arduino-cli lib install "Adafruit NeoPixel"
+    arduino-cli --config-file ./arduino-cli.yaml lib install "Adafruit NeoPixel"
 
     Write-Host "Installation complete."
 

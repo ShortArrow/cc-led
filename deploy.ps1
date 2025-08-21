@@ -12,7 +12,7 @@ param (
 $ErrorActionPreference = "Stop"
 
 # Fully Qualified Board Name (FQBN) for Seeed XIAO RP2040
-$fqbn = "seeed:rp2040:seeed_xiao_rp2040"
+$fqbn = "rp2040:rp2040:seeed_xiao_rp2040"
 $sketchDir = ".\$SketchName"
 
 try {
@@ -22,7 +22,7 @@ try {
 
     Write-Host "Uploading sketch '$SketchName' to board '$fqbn' on port '$Port'..."
     # The 'upload' command automatically compiles the sketch before uploading.
-    arduino-cli upload --port $Port --fqbn $fqbn $sketchDir
+    arduino-cli --config-file ./arduino-cli.yaml upload --port $Port --fqbn $fqbn $sketchDir
 
     Write-Host "Upload successful."
 
