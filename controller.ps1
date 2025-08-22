@@ -48,7 +48,7 @@
     .\controller.ps1 -Rainbow -Interval 10
 #>
 param(
-    [string]$Port = 'COM6',
+    [string]$Port,
     [switch]$On,
     [switch]$Off,
     [ValidateSet('Red', 'Green', 'Blue', 'Yellow', 'Purple', 'Cyan', 'White', 'Custom')]
@@ -65,6 +65,26 @@ param(
     # EffectDuration is not implemented as the effect runs continuously on the board
     # until a new command is sent.
 )
+
+# Load environment variables from .env file if it exists
+if (-not $Port) {
+    $envFile = Join-Path $PSScriptRoot ".env"
+    if (Test-Path $envFile) {
+        Get-Content $envFile | ForEach-Object {
+            if ($_ -match "^\s*([^#][^=]+)=(.+)$") {
+                $key = $matches[1].Trim()
+                $value = $matches[2].Trim()
+                if ($key -eq "SERIAL_PORT") {
+                    $Port = $value
+                }
+            }
+        }
+    }
+    # If still no port, use default
+    if (-not $Port) {
+        $Port = 'COM6'
+    }
+}
 
 function Get-RgbString {
     param([string]$ColorName, [string]$CustomRgb)

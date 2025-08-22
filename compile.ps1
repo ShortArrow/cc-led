@@ -10,7 +10,7 @@ param (
 $ErrorActionPreference = "Stop"
 
 # Fully Qualified Board Name (FQBN) for Seeed XIAO RP2040
-$fqbn = "seeed:rp2040:seeed_xiao_rp2040"
+$fqbn = "rp2040:rp2040:seeed_xiao_rp2040"
 $sketchDir = ".\$SketchName"
 
 try {
@@ -19,7 +19,7 @@ try {
     }
 
     Write-Host "Compiling sketch '$SketchName' for board '$fqbn'..."
-    arduino-cli compile --fqbn $fqbn $sketchDir
+    arduino-cli --config-file ./arduino-cli.yaml compile --fqbn $fqbn $sketchDir
 
     Write-Host "Compilation successful. Output files are in '$sketchDir\build'."
 
