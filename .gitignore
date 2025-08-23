@@ -1,2 +1,3 @@
 .arduino
 .env
+node_modules
