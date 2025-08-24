@@ -161,7 +161,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('install() - Setup Arduino environment for XIAO RP2040 development', () => {
-    it('should execute three sequential commands: update package index, install RP2040 board core, and install NeoPixel library', async () => {
+    it('should execute three sequential commands with arduino-cli.yaml config (ensures .arduino directory usage)', async () => {
       let callCount = 0;
       
       // Mock multiple sequential calls
@@ -191,27 +191,27 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       // Check all three commands were called
       expect(spawn).toHaveBeenCalledTimes(3);
       
-      // Check update-index was called
+      // Check update-index was called with config file (ensures .arduino dir usage)
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'arduino-cli',
-        expect.arrayContaining(['core', 'update-index']),
+        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'core', 'update-index']),
         expect.any(Object)
       );
       
-      // Check core install was called
+      // Check core install was called with config file (ensures .arduino dir usage)
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['core', 'install', 'rp2040:rp2040']),
+        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'core', 'install', 'rp2040:rp2040']),
         expect.any(Object)
       );
       
-      // Check library install was called
+      // Check library install was called with config file (ensures .arduino dir usage)
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['lib', 'install', '"Adafruit NeoPixel"']),
+        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'lib', 'install', '"Adafruit NeoPixel"']),
         expect.any(Object)
       );
     });
