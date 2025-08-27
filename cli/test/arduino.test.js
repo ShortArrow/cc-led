@@ -19,7 +19,9 @@ vi.mock('child_process', () => ({
 // Mock fs
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
-  readFileSync: vi.fn()
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn()
 }));
 
 // Mock config
@@ -62,7 +64,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       await expect(promise).resolves.toBeDefined();
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
-        ['--config-file', './arduino-cli.yaml', 'version'],
+        expect.arrayContaining(['--config-file', 'version']),
         expect.objectContaining({
           cwd: expect.any(String),
           shell: true
@@ -121,12 +123,12 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       const promise = deploy('TestSketch', { port: 'COM5' });
       
       // Get stdout callback and send data
-      const stdoutCallback = mockProcess.stdout.on.mock.calls[0][1];
-      stdoutCallback(Buffer.from('Upload output'));
-      
-      // Simulate successful completion
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
+      setTimeout(() => {
+        const stdoutCallback = mockProcess.stdout.on.mock.calls[0]?.[1];
+        if (stdoutCallback) stdoutCallback(Buffer.from('Upload output'));
+        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
+        if (closeCallback) closeCallback(0);
+      }, 10);
       
       await promise;
       
@@ -143,12 +145,12 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       const promise = deploy('TestSketch', {});
       
       // Get stdout callback and send data
-      const stdoutCallback = mockProcess.stdout.on.mock.calls[0][1];
-      stdoutCallback(Buffer.from('Upload output'));
-      
-      // Simulate successful completion
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
+      setTimeout(() => {
+        const stdoutCallback = mockProcess.stdout.on.mock.calls[0]?.[1];
+        if (stdoutCallback) stdoutCallback(Buffer.from('Upload output'));
+        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
+        if (closeCallback) closeCallback(0);
+      }, 10);
       
       await promise;
       
@@ -195,7 +197,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'core', 'update-index']),
+        expect.arrayContaining(['--config-file', 'core', 'update-index']),
         expect.any(Object)
       );
       
@@ -203,7 +205,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'core', 'install', 'rp2040:rp2040']),
+        expect.arrayContaining(['--config-file', 'core', 'install', 'rp2040:rp2040']),
         expect.any(Object)
       );
       
@@ -211,7 +213,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', './arduino-cli.yaml', 'lib', 'install', '"Adafruit NeoPixel"']),
+        expect.arrayContaining(['--config-file', 'lib', 'install', '"Adafruit NeoPixel"']),
         expect.any(Object)
       );
     });

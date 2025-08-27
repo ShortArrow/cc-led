@@ -1,11 +1,11 @@
 {
-  "name": "@cc-led/xiao-rp2040",
-  "version": "1.0.0",
-  "description": "Node.js library for controlling XIAO RP2040 LED and managing Arduino sketches",
+  "name": "@cc-led/cli",
+  "version": "2.0.0",
+  "description": "Universal CLI for controlling Arduino board LEDs and managing sketches",
   "main": "src/index.js",
   "type": "module",
   "bin": {
-    "xiao-rp2040": "./src/cli.js"
+    "cc-led": "./src/cli.js"
   },
   "scripts": {
     "test": "vitest",
@@ -13,12 +13,15 @@
     "test:coverage": "vitest --coverage"
   },
   "keywords": [
+    "arduino",
+    "led",
     "xiao",
     "rp2040",
-    "led",
-    "arduino",
+    "raspberry-pi-pico",
+    "uno-r4",
     "neopixel",
-    "ws2812"
+    "ws2812",
+    "cli"
   ],
   "author": "",
   "license": "MIT",
