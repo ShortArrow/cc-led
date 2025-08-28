@@ -69,8 +69,8 @@ describe('Config Utils - Environment and configuration management', () => {
         fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
       });
       
-      // Should have searched multiple paths (at least 3)
-      expect(vi.mocked(existsSync)).toHaveBeenCalledTimes(3);
+      // Should have searched available paths (current working directory only for security)
+      expect(vi.mocked(existsSync)).toHaveBeenCalledTimes(1);
     });
 
     it('should accept custom .env file path as parameter', async () => {
