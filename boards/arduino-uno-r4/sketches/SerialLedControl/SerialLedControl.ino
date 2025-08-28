@@ -26,13 +26,15 @@ void loop() {
       digitalWrite(ledPin, LOW);
       Serial.println("LED OFF");
     }
-    else if (command.startsWith("BLINK")) {
+    else if (command == "BLINK") {
       blinkEnabled = true;
+      ledState = LOW;  // Start with LED off
       previousMillis = millis(); // Reset timer when blink starts
       Serial.println("LED BLINK");
     }
   }
 
+  // Handle blinking
   if (blinkEnabled) {
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= blinkInterval) {
