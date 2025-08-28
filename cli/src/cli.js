@@ -213,8 +213,16 @@ program
     console.log('  cc-led compile LEDBlink --log-level trace   # Most verbose output');
     console.log('');
     
+    console.log(chalk.yellow('Digital LED Boards (Arduino Uno R4, etc.):'));
+    console.log('  cc-led --board arduino-uno-r4 led --on      # Turn on builtin LED');
+    console.log('  cc-led --board arduino-uno-r4 led --off     # Turn off builtin LED');  
+    console.log('  cc-led --board arduino-uno-r4 led --blink   # Blink builtin LED');
+    console.log('  cc-led --board arduino-uno-r4 led --color red  # Same as --on (color ignored)');
+    console.log('');
+    
     console.log(chalk.gray('Port can be set via -p option or SERIAL_PORT in .env file'));
     console.log(chalk.gray('Log levels: trace, debug, info (default), warn, error'));
+    console.log(chalk.gray('Note: Digital LED boards ignore color options and use simple on/off/blink'));
   });
 
 program.parse(process.argv);

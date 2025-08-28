@@ -1,9 +1,10 @@
 /**
- * @fileoverview LED Controller tests for XIAO RP2040 NeoPixel control
+ * @fileoverview LED Controller tests for Arduino board LED control
  * 
  * These tests verify the serial communication protocol for controlling
- * the WS2812 RGB LED on the XIAO RP2040 board. The controller sends
- * commands via serial port to the Arduino sketch running on the board.
+ * LEDs on Arduino boards including XIAO RP2040 NeoPixel (WS2812) and
+ * Arduino Uno R4 builtin LED (Digital). The controller sends commands
+ * via serial port to the Arduino sketch running on the board.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -135,6 +136,93 @@ describe('LedController - Serial communication for XIAO RP2040 LED control', () 
   describe('Error handling - Validate preconditions and handle failures', () => {
     it('should prevent command execution when serial port is not connected', async () => {
       await expect(controller.turnOn()).rejects.toThrow('Serial port is not open');
+    });
+  });
+});
+
+describe('LedController - Digital LED Protocol (Arduino Uno R4 builtin LED)', () => {
+  let controller;
+  let mockBoard;
+
+  beforeEach(() => {
+    mockBoard = {
+      getLedProtocol: vi.fn(() => 'Digital'),
+      config: {
+        serial: { baudRate: 9600 }
+      }
+    };
+    controller = new LedController('COM3', { board: mockBoard });
+    // Don't clear mockBoard.getLedProtocol calls since we want to test constructor behavior
+  });
+
+  describe('Protocol detection - Digital LED support', () => {
+    it('should detect Digital protocol from board configuration', () => {
+      expect(controller.protocol).toBe('Digital');
+      expect(mockBoard.getLedProtocol).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Digital LED Commands - Same command interface as RGB LEDs', () => {
+    beforeEach(async () => {
+      // Clear only serial port mocks, not board mocks
+      if (controller.serialPort && controller.serialPort.write) {
+        controller.serialPort.write.mockClear();
+      }
+      await controller.connect();
+    });
+
+    it('should support standard ON command', async () => {
+      await controller.turnOn();
+      expect(controller.serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
+    });
+
+    it('should support standard OFF command', async () => {
+      await controller.turnOff();
+      expect(controller.serialPort.write).toHaveBeenCalledWith('OFF\n', expect.any(Function));
+    });
+
+    it('should accept color commands but ignore colors (turn on LED)', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.setColor('red');
+      expect(controller.serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
+      expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'red' ignored, turning LED on.");
+      
+      await controller.setColor('blue'); 
+      expect(controller.serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
+      expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'blue' ignored, turning LED on.");
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should accept blink commands with colors but ignore colors', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.blink('red', 1000);
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'red' ignored, blinking LED.");
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should accept two-color blink but fall back to single-color blink', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.blink2Colors('red', 'blue', 500);
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support multi-color blinking. Colors 'red' and 'blue' ignored, using single-color blink.");
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should accept rainbow command but fall back to blinking', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.rainbow(100);
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(consoleSpy).toHaveBeenCalledWith('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
+      
+      consoleSpy.mockRestore();
     });
   });
 });

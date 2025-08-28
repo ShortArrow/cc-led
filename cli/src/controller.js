@@ -15,13 +15,15 @@ const COLORS = {
 };
 
 /**
- * LED Controller class for XIAO RP2040
+ * LED Controller class for Arduino boards
  */
 export class LedController {
   constructor(port, options = {}) {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
+    this.board = options.board;
+    this.protocol = this.board ? this.board.getLedProtocol() : 'WS2812';
   }
 
   /**
@@ -77,7 +79,7 @@ export class LedController {
   }
 
   /**
-   * Turn LED on (white)
+   * Turn LED on (white or default color)
    */
   async turnOn() {
     await this.sendCommand('ON');
@@ -95,8 +97,15 @@ export class LedController {
    * @param {string} color - Color name or RGB string
    */
   async setColor(color) {
-    const rgb = this.parseColor(color);
-    await this.sendCommand(`COLOR,${rgb}`);
+    if (this.protocol === 'Digital') {
+      // Digital LEDs don't support colors, just turn on
+      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, turning LED on.`);
+      await this.sendCommand('ON');
+    } else {
+      // WS2812 protocol
+      const rgb = this.parseColor(color);
+      await this.sendCommand(`COLOR,${rgb}`);
+    }
   }
 
   /**
@@ -105,8 +114,17 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink(color, interval = 500) {
-    const rgb = this.parseColor(color);
-    await this.sendCommand(`BLINK1,${rgb},${interval}`);
+    if (this.protocol === 'Digital') {
+      // Digital LEDs: simple blinking (color ignored)
+      if (color) {
+        console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
+      }
+      await this.sendCommand('BLINK');
+    } else {
+      // WS2812 protocol
+      const rgb = this.parseColor(color);
+      await this.sendCommand(`BLINK1,${rgb},${interval}`);
+    }
   }
 
   /**
@@ -116,9 +134,16 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink2Colors(color1, color2, interval = 500) {
-    const rgb1 = this.parseColor(color1);
-    const rgb2 = this.parseColor(color2);
-    await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
+    if (this.protocol === 'Digital') {
+      // Digital LEDs: single-color blinking only (colors ignored)
+      console.log(`Note: Digital LED does not support multi-color blinking. Colors '${color1}' and '${color2}' ignored, using single-color blink.`);
+      await this.sendCommand('BLINK');
+    } else {
+      // WS2812 protocol
+      const rgb1 = this.parseColor(color1);
+      const rgb2 = this.parseColor(color2);
+      await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
+    }
   }
 
   /**
@@ -126,7 +151,14 @@ export class LedController {
    * @param {number} interval - Rainbow speed in milliseconds
    */
   async rainbow(interval = 50) {
-    await this.sendCommand(`RAINBOW,${interval}`);
+    if (this.protocol === 'Digital') {
+      // Digital LEDs: fall back to blinking
+      console.log('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
+      await this.sendCommand('BLINK');
+    } else {
+      // WS2812 protocol
+      await this.sendCommand(`RAINBOW,${interval}`);
+    }
   }
 
   /**
@@ -155,7 +187,10 @@ export class LedController {
  * @param {Object} options - Command options
  */
 export async function executeCommand(options) {
-  const controller = new LedController(options.port);
+  const controller = new LedController(options.port, {
+    board: options.board,
+    baudRate: options.board ? options.board.config.serial?.baudRate : 9600
+  });
   
   try {
     await controller.connect();
