@@ -19,6 +19,51 @@ cc-led boards
 cc-led --board xiao-rp2040 sketches
 ```
 
+## 🔧 Development Setup
+
+### Prerequisites
+
+- Node.js (v16 or later) and npm
+- [Arduino CLI](https://arduino.github.io/arduino-cli/latest/) installed and in your system's PATH
+- Arduino board (e.g., XIAO RP2040)
+- USB cable for board connection
+
+### Alternative: Run directly without linking
+
+```bash
+# From the cc-led/cli directory
+node src/cli.js --help
+node src/cli.js boards
+node src/cli.js --board xiao-rp2040 compile ../boards/xiao-rp2040/sketches/LEDBlink
+node src/cli.js --board xiao-rp2040 led --color red -p COM3
+```
+
+### Running Tests
+
+```bash
+cd cc-led/cli
+npm test           # Run all tests
+npm test:watch     # Watch mode for development
+npm test:coverage  # Generate coverage report
+```
+
+### Uninstalling Development Link
+
+```bash
+# When done with development
+cd cc-led/cli
+npm unlink
+```
+
+### Development Workflow
+
+1. **Fork and Clone**: Fork the repository and clone your fork
+2. **Create Branch**: Create a feature branch from `main`
+3. **Develop**: Make your changes with proper testing
+4. **Test**: Run tests and verify functionality
+5. **Commit**: Use descriptive commit messages
+6. **Pull Request**: Submit a PR with clear description
+
 ## 🔧 Adding Support for a New Board
 
 ### Step 1: Create Board Directory Structure
