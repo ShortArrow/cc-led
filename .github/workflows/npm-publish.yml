@@ -1,0 +1,100 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd cli
+          npm ci
+      
+      - name: Run tests
+        run: |
+          cd cli
+          npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd cli
+          npm ci
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Update package version
+        run: |
+          cd cli
+          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
+      
+      - name: Security audit
+        run: |
+          cd cli
+          npm audit --audit-level high
+      
+      - name: Check for sensitive files
+        run: |
+          cd cli
+          # Check if any .env files exist in the package
+          if npm pack --dry-run | grep -E '\.(env|key|pem|p12)$'; then
+            echo "❌ Sensitive files detected in package!"
+            exit 1
+          fi
+          echo "✅ No sensitive files detected"
+      
+      - name: Build (if needed)
+        run: |
+          cd cli
+          # Add build step here if you have one
+          # npm run build
+      
+      - name: Publish to NPM
+        run: |
+          cd cli
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.version.outputs.VERSION }}
+          body: |
+            Changes in this Release
+            - See CHANGELOG.md for details
+          draft: false
+          prerelease: false

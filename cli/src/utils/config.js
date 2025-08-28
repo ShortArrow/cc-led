@@ -12,12 +12,11 @@ const __dirname = dirname(__filename);
  * @returns {Object} Configuration object
  */
 export function loadConfig(envPath) {
-  // Try multiple locations for .env file
+  // Only try runtime locations, avoid package-relative paths
   const possiblePaths = [
     envPath,
     join(process.cwd(), '.env'),  // Current working directory
-    join(__dirname, '..', '..', '.env'),  // Package root
-    join(__dirname, '..', '..', '..', '..', '.env')  // Project root
+    // Removed package-relative paths to prevent bundling .env files
   ].filter(Boolean);
   
   for (const configPath of possiblePaths) {

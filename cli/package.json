@@ -23,8 +23,26 @@
     "ws2812",
     "cli"
   ],
-  "author": "",
+  "author": "ShortArrow",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShortArrow/cc-led.git"
+  },
+  "homepage": "https://github.com/ShortArrow/cc-led#readme",
+  "bugs": {
+    "url": "https://github.com/ShortArrow/cc-led/issues"
+  },
+  "files": [
+    "src/**/*.js",
+    "README.md",
+    "!src/**/*.test.js",
+    "!src/**/*.env*",
+    "!src/**/.*"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "commander": "^11.0.0",
     "dotenv": "^16.3.1",
