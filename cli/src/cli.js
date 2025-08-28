@@ -25,7 +25,8 @@ program
   .name('cc-led')
   .description('Universal CLI for controlling Arduino board LEDs and managing sketches')
   .version(packageJson.version)
-  .option('-b, --board <board>', 'Target board (xiao-rp2040, raspberry-pi-pico, arduino-uno-r4)', 'xiao-rp2040');
+  .option('-b, --board <board>', 'Target board (xiao-rp2040, raspberry-pi-pico, arduino-uno-r4)', 'xiao-rp2040')
+  .option('--log-level <level>', 'Arduino CLI log level (trace, debug, info, warn, error)', 'info');
 
 // LED control command
 program
@@ -63,6 +64,7 @@ program
   .description('Compile an Arduino sketch')
   .option('-c, --config <file>', 'Arduino CLI config file')
   .option('-f, --fqbn <fqbn>', 'Fully Qualified Board Name')
+  .option('--log-level <level>', 'Arduino CLI log level (overrides global setting)')
   .action(async (sketch, options) => {
     try {
       const boardId = program.opts().board;
@@ -75,6 +77,7 @@ program
       
       options.board = board;
       options.fqbn = board.fqbn;
+      options.logLevel = options.logLevel || program.opts().logLevel;
       
       await compile(sketch, options);
       console.log(chalk.green('✓ Compilation successful'));
@@ -92,6 +95,7 @@ program
   .option('-p, --port <port>', 'Serial port (e.g., COM3 or /dev/ttyUSB0)')
   .option('-c, --config <file>', 'Arduino CLI config file')
   .option('-f, --fqbn <fqbn>', 'Fully Qualified Board Name')
+  .option('--log-level <level>', 'Arduino CLI log level (overrides global setting)')
   .action(async (sketch, options) => {
     try {
       const boardId = program.opts().board;
@@ -104,6 +108,7 @@ program
       
       options.board = board;
       options.fqbn = board.fqbn;
+      options.logLevel = options.logLevel || program.opts().logLevel;
       
       await deploy(sketch, options);
       console.log(chalk.green('✓ Upload successful'));
@@ -161,12 +166,14 @@ program
   .command('install')
   .description('Install required board cores and libraries')
   .option('-c, --config <file>', 'Arduino CLI config file')
+  .option('--log-level <level>', 'Arduino CLI log level (overrides global setting)')
   .action(async (options) => {
     try {
       const boardId = program.opts().board;
       const board = boardLoader.loadBoard(boardId);
       
       options.board = board;
+      options.logLevel = options.logLevel || program.opts().logLevel;
       
       await install(options);
       console.log(chalk.green(`✓ Installation complete for ${board.name}`));
@@ -200,7 +207,14 @@ program
     console.log('  cc-led --board raspberry-pi-pico compile LEDBlink');
     console.log('');
     
+    console.log(chalk.yellow('Arduino CLI Logging:'));
+    console.log('  cc-led --log-level debug compile LEDBlink    # Debug verbose output');
+    console.log('  cc-led --log-level warn install             # Show only warnings and errors');
+    console.log('  cc-led compile LEDBlink --log-level trace   # Most verbose output');
+    console.log('');
+    
     console.log(chalk.gray('Port can be set via -p option or SERIAL_PORT in .env file'));
+    console.log(chalk.gray('Log levels: trace, debug, info (default), warn, error'));
   });
 
 program.parse(process.argv);
