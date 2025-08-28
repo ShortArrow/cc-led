@@ -2,6 +2,7 @@
 
 #arduino
 .arduino
+build
 
 #nodejs
 node_modules
