@@ -60,7 +60,7 @@ board_manager:
    */
   async execute(args, logLevel = 'info') {
     return new Promise((resolve, reject) => {
-      const fullArgs = ['--config-file', this.configFile, '--log-level', logLevel, ...args];
+      const fullArgs = ['--log', '--log-level', logLevel, '--config-file', this.configFile, ...args];
       const proc = spawn('arduino-cli', fullArgs, {
         cwd: this.projectRoot,
         shell: true
@@ -72,13 +72,13 @@ board_manager:
       proc.stdout.on('data', (data) => {
         const text = data.toString();
         output += text;
-        console.log(text);
+        process.stdout.write(text);
       });
 
       proc.stderr.on('data', (data) => {
         const text = data.toString();
         error += text;
-        console.error(text);
+        process.stderr.write(text);
       });
 
       proc.on('close', (code) => {
