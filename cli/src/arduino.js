@@ -165,7 +165,7 @@ board_manager:
     } catch (error) {
       if (error.message.includes('Platform') && error.message.includes('not found')) {
         console.log('Dependencies missing. Installing automatically...');
-        await this.install(logLevel);
+        await this.install(logLevel, board);
         console.log('Retrying compilation...');
         await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir], logLevel);
       } else {
@@ -211,13 +211,30 @@ board_manager:
 
     console.log(`Uploading sketch '${sketchName}' to board '${this.fqbn}' on port '${serialPort}'...`);
     
-    await this.execute([
-      'upload',
-      '--port', serialPort,
-      '--fqbn', this.fqbn,
-      '--input-dir', join(sketchDir, 'build'),
-      sketchDir
-    ], logLevel);
+    try {
+      await this.execute([
+        'upload',
+        '--port', serialPort,
+        '--fqbn', this.fqbn,
+        '--input-dir', join(sketchDir, 'build'),
+        sketchDir
+      ], logLevel);
+    } catch (error) {
+      if (error.message.includes('Platform') && error.message.includes('not found')) {
+        console.log('Dependencies missing. Installing automatically...');
+        await this.install(logLevel, board);
+        console.log('Retrying upload...');
+        await this.execute([
+          'upload',
+          '--port', serialPort,
+          '--fqbn', this.fqbn,
+          '--input-dir', join(sketchDir, 'build'),
+          sketchDir
+        ], logLevel);
+      } else {
+        throw error;
+      }
+    }
     
     console.log('Upload successful');
   }
@@ -225,17 +242,35 @@ board_manager:
   /**
    * Install board cores and libraries
    * @param {string} [logLevel='info'] - Arduino CLI log level
+   * @param {Object} [board=null] - Board instance with platform and library info
    * @returns {Promise<void>}
    */
-  async install(logLevel = 'info') {
+  async install(logLevel = 'info', board = null) {
     console.log('Updating package index...');
     await this.execute(['core', 'update-index'], logLevel);
     
-    console.log('Installing Seeed RP2040 boards core...');
-    await this.execute(['core', 'install', 'rp2040:rp2040'], logLevel);
-    
-    console.log("Installing 'Adafruit NeoPixel' library...");
-    await this.execute(['lib', 'install', '"Adafruit NeoPixel"'], logLevel);
+    if (board) {
+      // Use board-specific installation
+      if (board.platform && board.platform.package) {
+        console.log(`Installing ${board.name} boards core (${board.platform.package})...`);
+        await this.execute(['core', 'install', board.platform.package], logLevel);
+      }
+      
+      if (board.libraries && board.libraries.length > 0) {
+        for (const lib of board.libraries) {
+          const libName = lib.version ? `${lib.name}@${lib.version}` : lib.name;
+          console.log(`Installing '${libName}' library...`);
+          await this.execute(['lib', 'install', `"${libName}"`], logLevel);
+        }
+      }
+    } else {
+      // Legacy: fallback for XIAO RP2040
+      console.log('Installing Seeed RP2040 boards core...');
+      await this.execute(['core', 'install', 'rp2040:rp2040'], logLevel);
+      
+      console.log("Installing 'Adafruit NeoPixel' library...");
+      await this.execute(['lib', 'install', '"Adafruit NeoPixel"'], logLevel);
+    }
     
     console.log('Installation complete');
   }
@@ -263,9 +298,9 @@ export async function deploy(sketchName, options = {}) {
 
 /**
  * Install required components
- * @param {Object} options - Options including logLevel
+ * @param {Object} options - Options including logLevel and board
  */
 export async function install(options = {}) {
   const arduino = new ArduinoCLI(options);
-  await arduino.install(options.logLevel);
+  await arduino.install(options.logLevel, options.board);
 }
