@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { loadConfig, getSerialPort } from './utils/config.js';
@@ -112,13 +112,23 @@ board_manager:
   }
 
   /**
-   * Check if sketch is compiled (build directory exists)
+   * Check if sketch is compiled (build directory exists and contains compiled files)
    * @param {string} sketchDir - Sketch directory path
    * @returns {boolean}
    */
   isCompiled(sketchDir) {
     const buildDir = join(sketchDir, 'build');
-    return existsSync(buildDir);
+    if (!existsSync(buildDir)) {
+      return false;
+    }
+    
+    // Check if build directory contains compiled files (.bin, .elf, or .uf2 files)
+    try {
+      const files = readdirSync(buildDir);
+      return files.some(file => file.endsWith('.bin') || file.endsWith('.elf') || file.endsWith('.uf2'));
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -147,14 +157,15 @@ board_manager:
     console.log(`Compiling sketch '${sketchName}' for board '${this.fqbn}'...`);
     
     // Try to compile, and if dependencies are missing, install them automatically
+    const buildDir = join(sketchDir, 'build');
     try {
-      await this.execute(['compile', '--fqbn', this.fqbn, sketchDir]);
+      await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir]);
     } catch (error) {
       if (error.message.includes('Platform') && error.message.includes('not found')) {
         console.log('Dependencies missing. Installing automatically...');
         await this.install();
         console.log('Retrying compilation...');
-        await this.execute(['compile', '--fqbn', this.fqbn, sketchDir]);
+        await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir]);
       } else {
         throw error;
       }
@@ -201,6 +212,7 @@ board_manager:
       'upload',
       '--port', serialPort,
       '--fqbn', this.fqbn,
+      '--input-dir', join(sketchDir, 'build'),
       sketchDir
     ]);
     
