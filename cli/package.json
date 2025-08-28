@@ -8,8 +8,8 @@
     "cc-led": "./src/cli.js"
   },
   "scripts": {
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:coverage": "vitest --coverage"
   },
   "keywords": [

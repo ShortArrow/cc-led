@@ -64,11 +64,41 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       await expect(promise).resolves.toBeDefined();
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
-        expect.arrayContaining(['--config-file', 'version']),
+        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'version']),
         expect.objectContaining({
           cwd: expect.any(String),
           shell: true
         })
+      );
+    });
+
+    it('should include log level parameter when provided', async () => {
+      const promise = arduino.execute(['version'], 'debug');
+      
+      // Simulate successful execution
+      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
+      closeCallback(0);
+      
+      await promise;
+      expect(spawn).toHaveBeenCalledWith(
+        'arduino-cli',
+        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        expect.any(Object)
+      );
+    });
+
+    it('should default to info log level when no level specified', async () => {
+      const promise = arduino.execute(['version']);
+      
+      // Simulate successful execution
+      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
+      closeCallback(0);
+      
+      await promise;
+      expect(spawn).toHaveBeenCalledWith(
+        'arduino-cli',
+        expect.arrayContaining(['--log', '--log-level', 'info']),
+        expect.any(Object)
       );
     });
 
@@ -197,7 +227,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', 'core', 'update-index']),
+        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'core', 'update-index']),
         expect.any(Object)
       );
       
@@ -205,7 +235,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', 'core', 'install', 'rp2040:rp2040']),
+        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'core', 'install', 'rp2040:rp2040']),
         expect.any(Object)
       );
       
@@ -213,7 +243,156 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['--config-file', 'lib', 'install', '"Adafruit NeoPixel"']),
+        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'lib', 'install', '"Adafruit NeoPixel"']),
+        expect.any(Object)
+      );
+    });
+
+    it('should use board-specific platform and libraries when board provided', async () => {
+      const mockBoard = {
+        name: 'Test Board',
+        platform: { package: 'test:platform' },
+        libraries: [
+          { name: 'TestLib1', version: '1.0.0' },
+          { name: 'TestLib2' }
+        ]
+      };
+      
+      let callCount = 0;
+      vi.mocked(spawn).mockImplementation(() => {
+        callCount++;
+        const proc = {
+          stdout: { on: vi.fn() },
+          stderr: { on: vi.fn() },
+          on: vi.fn(),
+          kill: vi.fn()
+        };
+        
+        setTimeout(() => {
+          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
+          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
+          
+          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
+          if (closeCallback) closeCallback(0);
+        }, 0);
+        
+        return proc;
+      });
+      
+      await install({ board: mockBoard });
+      
+      expect(spawn).toHaveBeenCalledTimes(4); // update-index + core + 2 libraries
+      
+      // Check board-specific platform installation
+      expect(spawn).toHaveBeenNthCalledWith(
+        2,
+        'arduino-cli',
+        expect.arrayContaining(['core', 'install', 'test:platform']),
+        expect.any(Object)
+      );
+      
+      // Check library with version
+      expect(spawn).toHaveBeenNthCalledWith(
+        3,
+        'arduino-cli',
+        expect.arrayContaining(['lib', 'install', '"TestLib1@1.0.0"']),
+        expect.any(Object)
+      );
+      
+      // Check library without version
+      expect(spawn).toHaveBeenNthCalledWith(
+        4,
+        'arduino-cli',
+        expect.arrayContaining(['lib', 'install', '"TestLib2"']),
+        expect.any(Object)
+      );
+    });
+
+    it('should fall back to legacy installation when no board provided', async () => {
+      let callCount = 0;
+      vi.mocked(spawn).mockImplementation(() => {
+        callCount++;
+        const proc = {
+          stdout: { on: vi.fn() },
+          stderr: { on: vi.fn() },
+          on: vi.fn(),
+          kill: vi.fn()
+        };
+        
+        setTimeout(() => {
+          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
+          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
+          
+          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
+          if (closeCallback) closeCallback(0);
+        }, 0);
+        
+        return proc;
+      });
+      
+      await install({ board: null });
+      
+      expect(spawn).toHaveBeenCalledTimes(3);
+      
+      // Should use legacy XIAO RP2040 commands
+      expect(spawn).toHaveBeenNthCalledWith(
+        2,
+        'arduino-cli',
+        expect.arrayContaining(['core', 'install', 'rp2040:rp2040']),
+        expect.any(Object)
+      );
+      
+      expect(spawn).toHaveBeenNthCalledWith(
+        3,
+        'arduino-cli',
+        expect.arrayContaining(['lib', 'install', '"Adafruit NeoPixel"']),
+        expect.any(Object)
+      );
+    });
+
+    it('should pass log level to all installation commands', async () => {
+      let callCount = 0;
+      vi.mocked(spawn).mockImplementation(() => {
+        callCount++;
+        const proc = {
+          stdout: { on: vi.fn() },
+          stderr: { on: vi.fn() },
+          on: vi.fn(),
+          kill: vi.fn()
+        };
+        
+        setTimeout(() => {
+          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
+          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
+          
+          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
+          if (closeCallback) closeCallback(0);
+        }, 0);
+        
+        return proc;
+      });
+      
+      await install({ logLevel: 'debug' });
+      
+      // Check all commands include debug log level
+      expect(spawn).toHaveBeenNthCalledWith(
+        1,
+        'arduino-cli',
+        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        expect.any(Object)
+      );
+      
+      expect(spawn).toHaveBeenNthCalledWith(
+        2,
+        'arduino-cli',
+        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        expect.any(Object)
+      );
+      
+      expect(spawn).toHaveBeenNthCalledWith(
+        3,
+        'arduino-cli',
+        expect.arrayContaining(['--log', '--log-level', 'debug']),
         expect.any(Object)
       );
     });
