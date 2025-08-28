@@ -1,2 +1,13 @@
-.arduino
 .env
+
+#arduino
+.arduino
+build
+
+#nodejs
+node_modules
+
+#AI
+.claude/settings.local.json
+.kiro
+

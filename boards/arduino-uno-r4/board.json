@@ -1,0 +1,32 @@
+{
+  "name": "Arduino Uno R4 Minima",
+  "id": "arduino-uno-r4",
+  "fqbn": "arduino:renesas_uno:minima",
+  "platform": {
+    "package": "arduino:renesas_uno",
+    "version": "1.0.5"
+  },
+  "libraries": [],
+  "led": {
+    "type": "gpio",
+    "pin": 13,
+    "count": 1,
+    "protocol": "Digital"
+  },
+  "serial": {
+    "baudRate": 9600,
+    "defaultPort": {
+      "windows": "COM3",
+      "linux": "/dev/ttyACM0",
+      "darwin": "/dev/tty.usbmodem*"
+    }
+  },
+  "sketches": {
+    "LEDBlink": {
+      "path": "sketches/LEDBlink",
+      "description": "Basic LED blink for write/upload testing (GPIO pin 13)"
+    }
+  },
+  "notes": "Uses built-in LED on pin 13. Simple on/off control only.",
+  "status": "planned"
+}
