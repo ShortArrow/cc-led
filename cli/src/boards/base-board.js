@@ -7,6 +7,8 @@ export class BaseBoard {
     this.name = config.name;
     this.id = config.id;
     this.fqbn = config.fqbn;
+    this.platform = config.platform;
+    this.libraries = config.libraries;
   }
 
   /**
