@@ -13,13 +13,22 @@ This document defines the functional requirements and technical specifications f
 ### 1. Multi-Board Architecture
 
 ```text
-cc-led/
-├── cli/                    # Node.js CLI implementation
-├── boards/                 # Board configurations & sketches
-│   ├── xiao-rp2040/       # XIAO RP2040 specific
-│   ├── raspberry-pi-pico/ # Raspberry Pi Pico specific
-│   └── arduino-uno-r4/    # Arduino Uno R4 specific
-└── .arduino/              # Local Arduino environment (auto-generated)
+cc-led/                     # NPM package root (can be installed globally)
+├── package.json           # NPM package definition with global CLI support
+├── src/                   # CLI source code
+│   ├── cli.js            # Main CLI entry point (bin target)
+│   ├── arduino.js        # Arduino CLI wrapper
+│   ├── controller.js     # LED controller via serial
+│   ├── boards/           # Board management system
+│   └── utils/            # Configuration utilities
+├── boards/                # Board configurations & sketches (bundled in package)
+│   ├── xiao-rp2040/      # XIAO RP2040 specific
+│   ├── raspberry-pi-pico/# Raspberry Pi Pico specific
+│   └── arduino-uno-r4/   # Arduino Uno R4 specific
+├── test/                  # Test files
+└── [user working dir]/    # Where user runs cc-led
+    ├── .arduino/          # Local Arduino environment (auto-generated)
+    └── arduino-cli.yaml   # Arduino CLI config (auto-generated)
 ```
 
 **Requirements**:
@@ -90,10 +99,19 @@ echo "SERIAL_PORT=COM3" > .env
 ```json
 {
   "name": "@cc-led/cli",
-  "version": "2.0.0",
+  "version": "0.0.1",
   "engines": {
     "node": ">=16.0.0"
   },
+  "bin": {
+    "cc-led": "./src/cli.js"
+  },
+  "files": [
+    "src/**/*.js",
+    "boards/**/*.json",
+    "boards/**/*.ino",
+    "README.md"
+  ],
   "dependencies": {
     "commander": "^11.0.0",    // CLI framework
     "dotenv": "^16.3.1",       // Environment variable management
@@ -102,6 +120,11 @@ echo "SERIAL_PORT=COM3" > .env
   }
 }
 ```
+
+**Global Installation Support**:
+- Can be installed with `npm install -g @cc-led/cli`
+- Works with `npx @cc-led/cli` without installation
+- Development with `npm link` for testing
 
 ### 2. Arduino CLI Integration
 
@@ -112,12 +135,24 @@ echo "SERIAL_PORT=COM3" > .env
 
 **Implementation**:
 ```javascript
+constructor() {
+  // Use package installation directory for board files and sketches
+  this.packageRoot = join(__dirname, '..');
+  // Current working directory for .arduino and config files
+  this.workingDir = process.cwd();
+}
+
 createLocalConfig() {
-  // Create .arduino directory in current directory
-  // Generate arduino-cli.yaml dynamically
-  // Implement local dependency management
+  // Create .arduino directory in current working directory
+  // Generate arduino-cli.yaml in current working directory
+  // Enables project-specific Arduino environments
 }
 ```
+
+**Directory Strategy**:
+- **Board files & sketches**: Read from package installation directory
+- **Arduino environment**: Created in user's current working directory
+- **Build outputs**: Generated in package's sketch directories
 
 ### 3. Board Configuration Specification
 

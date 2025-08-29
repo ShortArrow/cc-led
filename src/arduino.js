@@ -16,7 +16,10 @@ export class ArduinoCLI {
     this.fqbn = options.fqbn || config.fqbn;
     // Create local arduino-cli.yaml in current directory
     this.configFile = this.createLocalConfig();
-    this.projectRoot = process.cwd();
+    // Use package installation directory for board files and sketches
+    this.packageRoot = join(__dirname, '..');
+    // Current working directory for .arduino and config files
+    this.workingDir = process.cwd();
   }
 
   /**
@@ -62,7 +65,7 @@ board_manager:
     return new Promise((resolve, reject) => {
       const fullArgs = ['--log', '--log-level', logLevel, '--config-file', this.configFile, ...args];
       const proc = spawn('arduino-cli', fullArgs, {
-        cwd: this.projectRoot,
+        cwd: this.workingDir,
         shell: true
       });
 
@@ -144,12 +147,12 @@ board_manager:
     
     if (board && board.supportsSketch(sketchName)) {
       // Use board-specific sketch location
-      const boardsDir = join(this.projectRoot, 'boards', board.id);
+      const boardsDir = join(this.packageRoot, 'boards', board.id);
       const sketchPath = board.getSketchPath(sketchName);
       sketchDir = join(boardsDir, sketchPath);
     } else {
-      // Legacy: try project root
-      sketchDir = join(this.projectRoot, sketchName);
+      // Legacy: try working directory
+      sketchDir = join(this.workingDir, sketchName);
     }
     
     if (!existsSync(sketchDir)) {
@@ -189,12 +192,12 @@ board_manager:
     
     if (board && board.supportsSketch(sketchName)) {
       // Use board-specific sketch location
-      const boardsDir = join(this.projectRoot, 'boards', board.id);
+      const boardsDir = join(this.packageRoot, 'boards', board.id);
       const sketchPath = board.getSketchPath(sketchName);
       sketchDir = join(boardsDir, sketchPath);
     } else {
-      // Legacy: try project root
-      sketchDir = join(this.projectRoot, sketchName);
+      // Legacy: try working directory
+      sketchDir = join(this.workingDir, sketchName);
     }
     
     if (!existsSync(sketchDir)) {

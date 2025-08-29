@@ -63,7 +63,7 @@ export class LedController {
           console.log('No response received from device (timeout)');
           resolve();
         }
-      }, 2000);
+      }, process.env.NODE_ENV === 'test' ? 10 : 2000);
       
       const responseHandler = (data) => {
         const response = data.toString().trim();
