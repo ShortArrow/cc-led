@@ -15,13 +15,15 @@ const COLORS = {
 };
 
 /**
- * LED Controller class for XIAO RP2040
+ * LED Controller class for Arduino boards
  */
 export class LedController {
   constructor(port, options = {}) {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
+    this.board = options.board;
+    this.protocol = this.board ? this.board.getLedProtocol() : 'WS2812';
   }
 
   /**
@@ -52,12 +54,35 @@ export class LedController {
     }
 
     return new Promise((resolve, reject) => {
+      console.log(`Sent command: ${command}`);
+      
+      // Set up response listener
+      let responseReceived = false;
+      const responseTimeout = setTimeout(() => {
+        if (!responseReceived) {
+          console.log('No response received from device (timeout)');
+          resolve();
+        }
+      }, 2000);
+      
+      const responseHandler = (data) => {
+        const response = data.toString().trim();
+        if (response.startsWith('ACCEPTED,') || response.startsWith('REJECT,')) {
+          responseReceived = true;
+          clearTimeout(responseTimeout);
+          console.log(`Device response: ${response}`);
+          this.serialPort.off('data', responseHandler);
+          resolve();
+        }
+      };
+      
+      this.serialPort.on('data', responseHandler);
+      
       this.serialPort.write(`${command}\n`, (err) => {
         if (err) {
+          clearTimeout(responseTimeout);
+          this.serialPort.off('data', responseHandler);
           reject(new Error(`Failed to send command: ${err.message}`));
-        } else {
-          console.log(`Sent command: ${command}`);
-          resolve();
         }
       });
     });
@@ -77,7 +102,7 @@ export class LedController {
   }
 
   /**
-   * Turn LED on (white)
+   * Turn LED on (white or default color)
    */
   async turnOn() {
     await this.sendCommand('ON');
@@ -96,6 +121,9 @@ export class LedController {
    */
   async setColor(color) {
     const rgb = this.parseColor(color);
+    if (this.protocol === 'Digital' && color !== 'white') {
+      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, turning LED on.`);
+    }
     await this.sendCommand(`COLOR,${rgb}`);
   }
 
@@ -106,6 +134,9 @@ export class LedController {
    */
   async blink(color, interval = 500) {
     const rgb = this.parseColor(color);
+    if (this.protocol === 'Digital' && color && color !== 'white') {
+      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
+    }
     await this.sendCommand(`BLINK1,${rgb},${interval}`);
   }
 
@@ -118,6 +149,9 @@ export class LedController {
   async blink2Colors(color1, color2, interval = 500) {
     const rgb1 = this.parseColor(color1);
     const rgb2 = this.parseColor(color2);
+    if (this.protocol === 'Digital') {
+      console.log(`Note: Digital LED does not support multi-color blinking. Colors '${color1}' and '${color2}' ignored, using single-color blink.`);
+    }
     await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
   }
 
@@ -126,6 +160,9 @@ export class LedController {
    * @param {number} interval - Rainbow speed in milliseconds
    */
   async rainbow(interval = 50) {
+    if (this.protocol === 'Digital') {
+      console.log('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
+    }
     await this.sendCommand(`RAINBOW,${interval}`);
   }
 
@@ -155,7 +192,10 @@ export class LedController {
  * @param {Object} options - Command options
  */
 export async function executeCommand(options) {
-  const controller = new LedController(options.port);
+  const controller = new LedController(options.port, {
+    board: options.board,
+    baudRate: options.board ? options.board.config.serial?.baudRate : 9600
+  });
   
   try {
     await controller.connect();
@@ -164,24 +204,24 @@ export async function executeCommand(options) {
       await controller.turnOn();
     } else if (options.off) {
       await controller.turnOff();
-    } else if (options.color) {
-      if (options.blink) {
-        if (options.secondColor) {
-          await controller.blink2Colors(
-            options.color,
-            options.secondColor,
-            options.interval
-          );
-        } else {
-          await controller.blink(options.color, options.interval);
-        }
+    } else if (options.blink) {
+      // Handle blink with optional color (default to white)
+      const blinkColor = typeof options.blink === 'string' ? options.blink : (options.color || 'white');
+      if (options.secondColor) {
+        await controller.blink2Colors(
+          blinkColor,
+          options.secondColor,
+          options.interval
+        );
       } else {
-        await controller.setColor(options.color);
+        await controller.blink(blinkColor, options.interval);
       }
+    } else if (options.color) {
+      await controller.setColor(options.color);
     } else if (options.rainbow) {
       await controller.rainbow(options.interval);
     } else {
-      throw new Error('No action specified. Use --on, --off, --color, or --rainbow');
+      throw new Error('No action specified. Use --on, --off, --color, --blink, or --rainbow');
     }
   } finally {
     await controller.disconnect();

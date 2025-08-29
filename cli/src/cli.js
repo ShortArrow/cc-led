@@ -36,7 +36,7 @@ program
   .option('--on', 'Turn LED on (white)')
   .option('--off', 'Turn LED off')
   .option('-c, --color <color>', 'Set color (red, green, blue, yellow, purple, cyan, white, or R,G,B)')
-  .option('-b, --blink', 'Enable blinking mode')
+  .option('-b, --blink [color]', 'Enable blinking mode (optional color, defaults to white)')
   .option('-s, --second-color <color>', 'Second color for two-color blinking')
   .option('-i, --interval <ms>', 'Blink interval or rainbow speed in milliseconds', '500')
   .option('-r, --rainbow', 'Activate rainbow effect')
@@ -195,7 +195,9 @@ program
     console.log('  cc-led led --off                        # Turn LED off');
     console.log('  cc-led led --color red                  # Set LED to red');
     console.log('  cc-led led --color 255,100,0            # Set custom RGB color');
-    console.log('  cc-led led --blink --color green        # Blink green');
+    console.log('  cc-led led --blink                      # Blink white (default)');
+    console.log('  cc-led led --blink green                # Blink green');
+    console.log('  cc-led led --blink --color green        # Blink green (alternative)');
     console.log('  cc-led led --rainbow                    # Rainbow effect');
     console.log('  cc-led --board xiao-rp2040 led --color red  # Specify board');
     console.log('');
@@ -213,8 +215,17 @@ program
     console.log('  cc-led compile LEDBlink --log-level trace   # Most verbose output');
     console.log('');
     
+    console.log(chalk.yellow('Digital LED Boards (Arduino Uno R4, etc.):'));
+    console.log('  cc-led --board arduino-uno-r4 led --on      # Turn on builtin LED');
+    console.log('  cc-led --board arduino-uno-r4 led --off     # Turn off builtin LED');  
+    console.log('  cc-led --board arduino-uno-r4 led --blink   # Blink builtin LED (500ms)');
+    console.log('  cc-led --board arduino-uno-r4 led --blink --interval 250  # Fast blink (250ms)');
+    console.log('  cc-led --board arduino-uno-r4 led --color red  # Same as --on (color ignored)');
+    console.log('');
+    
     console.log(chalk.gray('Port can be set via -p option or SERIAL_PORT in .env file'));
     console.log(chalk.gray('Log levels: trace, debug, info (default), warn, error'));
+    console.log(chalk.gray('Note: Digital LED boards ignore color options and use simple on/off/blink'));
   });
 
 program.parse(process.argv);

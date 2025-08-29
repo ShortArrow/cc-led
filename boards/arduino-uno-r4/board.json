@@ -25,8 +25,12 @@
     "LEDBlink": {
       "path": "sketches/LEDBlink",
       "description": "Basic LED blink for write/upload testing (GPIO pin 13)"
+    },
+    "SerialLedControl": {
+      "path": "sketches/SerialLedControl",
+      "description": "Serial control for builtin LED with on/off/blink commands"
     }
   },
-  "notes": "Uses built-in LED on pin 13. Simple on/off control only.",
-  "status": "planned"
+  "notes": "Uses built-in LED on pin 13. Simple on/off/blink control via serial commands.",
+  "status": "supported"
 }
