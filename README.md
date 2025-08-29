@@ -11,24 +11,29 @@ cc-led/                          # Project root
 │   └── data/                    # Arduino CLI managed directory
 │       ├── downloads/           # Downloaded board packages
 │       └── packages/            # Installed boards and tools
-├── NeoPixel_SerialControl/      # Arduino sketch for LED control
-│   ├── NeoPixel_SerialControl.ino
-│   └── build/                   # Compiled binaries (after compile)
-├── tool/cc-led/xiao-rp2040/     # Node.js CLI tool
-│   ├── package.json             # NPM package definition
-│   ├── node_modules/            # Node.js dependencies (local)
-│   ├── src/                     # JavaScript source code
-│   └── test/                    # Vitest test files
-└── *.ps1                        # PowerShell scripts (legacy)
+├── boards/                      # Board configurations and sketches
+│   ├── xiao-rp2040/            # XIAO RP2040 support
+│   │   ├── board.json          # Board configuration
+│   │   └── sketches/           # Arduino sketches
+│   ├── arduino-uno-r4/         # Arduino Uno R4 support
+│   │   ├── board.json          # Board configuration
+│   │   └── sketches/           # Arduino sketches
+│   └── raspberry-pi-pico/      # Raspberry Pi Pico support
+├── cli/                        # Node.js CLI tool
+│   ├── package.json            # NPM package definition
+│   ├── node_modules/           # Node.js dependencies (local)
+│   ├── src/                    # JavaScript source code
+│   └── test/                   # Vitest test files
+└── *.ps1                       # PowerShell scripts (legacy)
 
 ## Support
 
 | Board | Status | LED | Signeture | Wiki |
 |----------|--------|------|-----------|------|
 | Seeed Studio XIAO RP2040 | ✅ Supported | RGB | xiao-rp2040 | [Wiki](https://wiki.seeedstudio.com/XIAO-RP2040/) |
-| Raspberry Pi Pico | 📅 W.I.P. | Single | pico | [Wiki](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html) |
-| Arduino Uno R4 Minima | 📅 W.I.P. | Single | uno-r4-minima | [Wiki](https://docs.arduino.cc/hardware/uno-r4-minima/) |
-| Arduino Uno R4 WiFi | 📅 W.I.P. | Single | uno-r4-wifi | [Wiki](https://docs.arduino.cc/hardware/uno-r4-wifi/) |
+| Arduino Uno R4 Minima | ✅ Supported | Digital | arduino-uno-r4 | [Wiki](https://docs.arduino.cc/hardware/uno-r4-minima/) |
+| Raspberry Pi Pico | 📅 W.I.P. | Digital | raspberry-pi-pico | [Wiki](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html) |
+| Arduino Uno R4 WiFi | 📅 W.I.P. | Digital | uno-r4-wifi | [Wiki](https://docs.arduino.cc/hardware/uno-r4-wifi/) |
 | Waveshare RA4M1-Zero | 📅 W.I.P. | RGB | ra4m1-zero | [Wiki](https://www.waveshare.com/wiki/RA4M1-Zero) |
 | Seeed Studio XIAO RA4M1 | 📅 W.I.P. | RGB | xiao-ra4m1 | [Wiki](https://wiki.seeedstudio.com/getting_started_xiao_ra4m1/) |
 | Seeed Studio XIAO nRF52840 | 📅 W.I.P. | RGB | xiao-nrf52840 | [Wiki](https://wiki.seeedstudio.com/XIAO_BLE/) |
@@ -45,26 +50,48 @@ cc-led/                          # Project root
 
 ## Setup
 
-### Quick Start with npx (When Published to npm)
+### Quick Start with npm Global Install
 
-**Note: The package is not yet published to npm. For now, use the Local Development Setup below.**
+Install the CLI globally via npm:
 
-Once published, you'll be able to use `npx` to run the CLI directly:
+```bash
+# Install globally
+npm install -g @cc-led/cli
+
+# Install Arduino dependencies for your board
+cc-led --board xiao-rp2040 install        # For XIAO RP2040
+cc-led --board arduino-uno-r4 install     # For Arduino Uno R4
+
+# Compile and upload the control sketch
+cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
+cc-led --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
+
+# For Arduino Uno R4
+cc-led --board arduino-uno-r4 compile SerialLedControl
+cc-led --board arduino-uno-r4 deploy SerialLedControl -p COM3
+
+# Control the LED
+cc-led --board xiao-rp2040 led --color red -p COM3
+cc-led --board arduino-uno-r4 led --blink -p COM3
+```
+
+### Quick Start with npx (Alternative)
+
+You can also use `npx` without global installation:
 
 ```bash
 # First time setup - install Arduino boards and libraries
-cd cc-led
 npx @cc-led/cli --board xiao-rp2040 install
 
 # Compile the LED control sketch
 npx @cc-led/cli --board xiao-rp2040 compile NeoPixel_SerialControl
 
 # Upload to your board (replace COM3 with your port)
-npx @cc-led/cli --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
+npx @cc-led/cli --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
 
 # Control the LED
 npx @cc-led/cli --board xiao-rp2040 led --color red -p COM3
-npx @cc-led/cli --board xiao-rp2040 led --rainbow -p COM3
+npx @cc-led/cli --board arduino-uno-r4 led --blink -p COM3
 ```
 
 ### 🔧 Development Setup
@@ -126,9 +153,15 @@ cc-led --board xiao-rp2040 led --blink --color red --second-color blue --interva
 # Rainbow effect (XIAO RP2040 with RGB LED)
 cc-led --board xiao-rp2040 led --rainbow --interval 50 -p COM3
 
-# For other boards (when supported)
+# Digital LED boards (Arduino Uno R4, etc.)
+cc-led --board arduino-uno-r4 led --on -p COM5                      # Turn on builtin LED
+cc-led --board arduino-uno-r4 led --off -p COM5                     # Turn off builtin LED
+cc-led --board arduino-uno-r4 led --blink -p COM5                   # Blink (default 500ms)
+cc-led --board arduino-uno-r4 led --blink --interval 250 -p COM5    # Fast blink (250ms)
+cc-led --board arduino-uno-r4 led --color red -p COM5               # Same as --on (color ignored)
+
+# Other boards (when supported)
 cc-led --board raspberry-pi-pico led --on -p /dev/ttyACM0
-cc-led --board arduino-uno-r4 led --blink --interval 500 -p COM5
 ```
 
 #### Port Configuration
