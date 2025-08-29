@@ -218,7 +218,8 @@ program
     console.log(chalk.yellow('Digital LED Boards (Arduino Uno R4, etc.):'));
     console.log('  cc-led --board arduino-uno-r4 led --on      # Turn on builtin LED');
     console.log('  cc-led --board arduino-uno-r4 led --off     # Turn off builtin LED');  
-    console.log('  cc-led --board arduino-uno-r4 led --blink   # Blink builtin LED');
+    console.log('  cc-led --board arduino-uno-r4 led --blink   # Blink builtin LED (500ms)');
+    console.log('  cc-led --board arduino-uno-r4 led --blink --interval 250  # Fast blink (250ms)');
     console.log('  cc-led --board arduino-uno-r4 led --color red  # Same as --on (color ignored)');
     console.log('');
     

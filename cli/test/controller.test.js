@@ -181,46 +181,68 @@ describe('LedController - Digital LED Protocol (Arduino Uno R4 builtin LED)', ()
       expect(controller.serialPort.write).toHaveBeenCalledWith('OFF\n', expect.any(Function));
     });
 
-    it('should accept color commands but ignore colors (turn on LED)', async () => {
+    it('should send RGB commands but show color warning', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
       
       await controller.setColor('red');
-      expect(controller.serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
+      expect(controller.serialPort.write).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
       expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'red' ignored, turning LED on.");
       
       await controller.setColor('blue'); 
-      expect(controller.serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
+      expect(controller.serialPort.write).toHaveBeenCalledWith('COLOR,0,0,255\n', expect.any(Function));
       expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'blue' ignored, turning LED on.");
       
       consoleSpy.mockRestore();
     });
 
-    it('should accept blink commands with colors but ignore colors', async () => {
+    it('should send RGB blink commands with color warning', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
       
       await controller.blink('red', 1000);
-      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK1,255,0,0,1000\n', expect.any(Function));
       expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support colors. Color 'red' ignored, blinking LED.");
       
       consoleSpy.mockRestore();
     });
 
-    it('should accept two-color blink but fall back to single-color blink', async () => {
+    it('should send RGB two-color blink with color warning', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
       
       await controller.blink2Colors('red', 'blue', 500);
-      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK2,255,0,0,0,0,255,500\n', expect.any(Function));
       expect(consoleSpy).toHaveBeenCalledWith("Note: Digital LED does not support multi-color blinking. Colors 'red' and 'blue' ignored, using single-color blink.");
       
       consoleSpy.mockRestore();
     });
 
-    it('should accept rainbow command but fall back to blinking', async () => {
+    it('should send RGB rainbow command with fallback warning', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
       
       await controller.rainbow(100);
-      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK\n', expect.any(Function));
+      expect(controller.serialPort.write).toHaveBeenCalledWith('RAINBOW,100\n', expect.any(Function));
       expect(consoleSpy).toHaveBeenCalledWith('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should support blink with white (no warning for default color)', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.blink('white', 250);
+      expect(controller.serialPort.write).toHaveBeenCalledWith('BLINK1,255,255,255,250\n', expect.any(Function));
+      // Should not show warning for white (default color)
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('Note: Digital LED does not support colors'));
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should support setColor with white (no warning for default color)', async () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      
+      await controller.setColor('white');
+      expect(controller.serialPort.write).toHaveBeenCalledWith('COLOR,255,255,255\n', expect.any(Function));
+      // Should not show warning for white (default color)
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('Note: Digital LED does not support colors'));
       
       consoleSpy.mockRestore();
     });

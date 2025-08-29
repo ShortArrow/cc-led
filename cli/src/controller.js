@@ -54,12 +54,35 @@ export class LedController {
     }
 
     return new Promise((resolve, reject) => {
+      console.log(`Sent command: ${command}`);
+      
+      // Set up response listener
+      let responseReceived = false;
+      const responseTimeout = setTimeout(() => {
+        if (!responseReceived) {
+          console.log('No response received from device (timeout)');
+          resolve();
+        }
+      }, 2000);
+      
+      const responseHandler = (data) => {
+        const response = data.toString().trim();
+        if (response.startsWith('ACCEPTED,') || response.startsWith('REJECT,')) {
+          responseReceived = true;
+          clearTimeout(responseTimeout);
+          console.log(`Device response: ${response}`);
+          this.serialPort.off('data', responseHandler);
+          resolve();
+        }
+      };
+      
+      this.serialPort.on('data', responseHandler);
+      
       this.serialPort.write(`${command}\n`, (err) => {
         if (err) {
+          clearTimeout(responseTimeout);
+          this.serialPort.off('data', responseHandler);
           reject(new Error(`Failed to send command: ${err.message}`));
-        } else {
-          console.log(`Sent command: ${command}`);
-          resolve();
         }
       });
     });
@@ -97,15 +120,11 @@ export class LedController {
    * @param {string} color - Color name or RGB string
    */
   async setColor(color) {
-    if (this.protocol === 'Digital') {
-      // Digital LEDs don't support colors, just turn on
+    const rgb = this.parseColor(color);
+    if (this.protocol === 'Digital' && color !== 'white') {
       console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, turning LED on.`);
-      await this.sendCommand('ON');
-    } else {
-      // WS2812 protocol
-      const rgb = this.parseColor(color);
-      await this.sendCommand(`COLOR,${rgb}`);
     }
+    await this.sendCommand(`COLOR,${rgb}`);
   }
 
   /**
@@ -114,17 +133,11 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink(color, interval = 500) {
-    if (this.protocol === 'Digital') {
-      // Digital LEDs: simple blinking (color ignored)
-      if (color) {
-        console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
-      }
-      await this.sendCommand('BLINK');
-    } else {
-      // WS2812 protocol
-      const rgb = this.parseColor(color);
-      await this.sendCommand(`BLINK1,${rgb},${interval}`);
+    const rgb = this.parseColor(color);
+    if (this.protocol === 'Digital' && color && color !== 'white') {
+      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
     }
+    await this.sendCommand(`BLINK1,${rgb},${interval}`);
   }
 
   /**
@@ -134,16 +147,12 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink2Colors(color1, color2, interval = 500) {
+    const rgb1 = this.parseColor(color1);
+    const rgb2 = this.parseColor(color2);
     if (this.protocol === 'Digital') {
-      // Digital LEDs: single-color blinking only (colors ignored)
       console.log(`Note: Digital LED does not support multi-color blinking. Colors '${color1}' and '${color2}' ignored, using single-color blink.`);
-      await this.sendCommand('BLINK');
-    } else {
-      // WS2812 protocol
-      const rgb1 = this.parseColor(color1);
-      const rgb2 = this.parseColor(color2);
-      await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
     }
+    await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
   }
 
   /**
@@ -152,13 +161,9 @@ export class LedController {
    */
   async rainbow(interval = 50) {
     if (this.protocol === 'Digital') {
-      // Digital LEDs: fall back to blinking
       console.log('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
-      await this.sendCommand('BLINK');
-    } else {
-      // WS2812 protocol
-      await this.sendCommand(`RAINBOW,${interval}`);
     }
+    await this.sendCommand(`RAINBOW,${interval}`);
   }
 
   /**
@@ -200,7 +205,7 @@ export async function executeCommand(options) {
     } else if (options.off) {
       await controller.turnOff();
     } else if (options.blink) {
-      // Handle blink with optional color
+      // Handle blink with optional color (default to white)
       const blinkColor = typeof options.blink === 'string' ? options.blink : (options.color || 'white');
       if (options.secondColor) {
         await controller.blink2Colors(
