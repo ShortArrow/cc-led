@@ -199,24 +199,24 @@ export async function executeCommand(options) {
       await controller.turnOn();
     } else if (options.off) {
       await controller.turnOff();
-    } else if (options.color) {
-      if (options.blink) {
-        if (options.secondColor) {
-          await controller.blink2Colors(
-            options.color,
-            options.secondColor,
-            options.interval
-          );
-        } else {
-          await controller.blink(options.color, options.interval);
-        }
+    } else if (options.blink) {
+      // Handle blink with optional color
+      const blinkColor = typeof options.blink === 'string' ? options.blink : (options.color || 'white');
+      if (options.secondColor) {
+        await controller.blink2Colors(
+          blinkColor,
+          options.secondColor,
+          options.interval
+        );
       } else {
-        await controller.setColor(options.color);
+        await controller.blink(blinkColor, options.interval);
       }
+    } else if (options.color) {
+      await controller.setColor(options.color);
     } else if (options.rainbow) {
       await controller.rainbow(options.interval);
     } else {
-      throw new Error('No action specified. Use --on, --off, --color, or --rainbow');
+      throw new Error('No action specified. Use --on, --off, --color, --blink, or --rainbow');
     }
   } finally {
     await controller.disconnect();

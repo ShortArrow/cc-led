@@ -36,7 +36,7 @@ program
   .option('--on', 'Turn LED on (white)')
   .option('--off', 'Turn LED off')
   .option('-c, --color <color>', 'Set color (red, green, blue, yellow, purple, cyan, white, or R,G,B)')
-  .option('-b, --blink', 'Enable blinking mode')
+  .option('-b, --blink [color]', 'Enable blinking mode (optional color, defaults to white)')
   .option('-s, --second-color <color>', 'Second color for two-color blinking')
   .option('-i, --interval <ms>', 'Blink interval or rainbow speed in milliseconds', '500')
   .option('-r, --rainbow', 'Activate rainbow effect')
@@ -195,7 +195,9 @@ program
     console.log('  cc-led led --off                        # Turn LED off');
     console.log('  cc-led led --color red                  # Set LED to red');
     console.log('  cc-led led --color 255,100,0            # Set custom RGB color');
-    console.log('  cc-led led --blink --color green        # Blink green');
+    console.log('  cc-led led --blink                      # Blink white (default)');
+    console.log('  cc-led led --blink green                # Blink green');
+    console.log('  cc-led led --blink --color green        # Blink green (alternative)');
     console.log('  cc-led led --rainbow                    # Rainbow effect');
     console.log('  cc-led --board xiao-rp2040 led --color red  # Specify board');
     console.log('');
