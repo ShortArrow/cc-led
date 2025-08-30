@@ -117,11 +117,13 @@ board_manager:
 
   /**
    * Check if sketch is compiled (build directory exists and contains compiled files)
-   * @param {string} sketchDir - Sketch directory path
+   * @param {string} sketchName - Sketch name
+   * @param {Object} board - Board instance
    * @returns {boolean}
    */
-  isCompiled(sketchDir) {
-    const buildDir = join(sketchDir, 'build');
+  isCompiled(sketchName, board = null) {
+    const boardId = board ? board.id : 'default';
+    const buildDir = join(this.workingDir, '.build', boardId, sketchName);
     if (!existsSync(buildDir)) {
       return false;
     }
@@ -161,8 +163,9 @@ board_manager:
 
     console.log(`Compiling sketch '${sketchName}' for board '${this.fqbn}'...`);
     
-    // Try to compile, and if dependencies are missing, install them automatically
-    const buildDir = join(sketchDir, 'build');
+    // Use working directory for build output (writable location)
+    const boardId = board ? board.id : 'default';
+    const buildDir = join(this.workingDir, '.build', boardId, sketchName);
     try {
       await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir], logLevel);
     } catch (error) {
@@ -176,7 +179,7 @@ board_manager:
       }
     }
     
-    console.log(`Compilation successful. Output files are in '${sketchDir}/build'`);
+    console.log(`Compilation successful. Output files are in '${buildDir}'`);
   }
 
   /**
@@ -205,7 +208,7 @@ board_manager:
     }
 
     // Auto-compile if not compiled
-    if (!this.isCompiled(sketchDir)) {
+    if (!this.isCompiled(sketchName, board)) {
       console.log('Sketch not compiled. Compiling automatically...');
       await this.compile(sketchName, board, logLevel);
     }
@@ -214,12 +217,16 @@ board_manager:
 
     console.log(`Uploading sketch '${sketchName}' to board '${this.fqbn}' on port '${serialPort}'...`);
     
+    // Use build directory from working directory
+    const boardId = board ? board.id : 'default';
+    const buildDir = join(this.workingDir, '.build', boardId, sketchName);
+    
     try {
       await this.execute([
         'upload',
         '--port', serialPort,
         '--fqbn', this.fqbn,
-        '--input-dir', join(sketchDir, 'build'),
+        '--input-dir', buildDir,
         sketchDir
       ], logLevel);
     } catch (error) {
@@ -231,7 +238,7 @@ board_manager:
           'upload',
           '--port', serialPort,
           '--fqbn', this.fqbn,
-          '--input-dir', join(sketchDir, 'build'),
+          '--input-dir', buildDir,
           sketchDir
         ], logLevel);
       } else {
