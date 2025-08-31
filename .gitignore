@@ -3,6 +3,7 @@
 #arduino
 .arduino
 build
+.build
 
 #nodejs
 node_modules
