@@ -115,8 +115,8 @@ cc-led --board xiao-rp2040 compile LEDBlink
 
 | Installation Method | Package Location | Behavior | Use Case |
 |-------------------|------------------|----------|----------|
-| `npm install -g @cc-led/cli` | System global npm directory | Production use | End users |
-| `npx @cc-led/cli` | npm cache | Temporary execution | Occasional users |
+| `npm install -g cc-led` | System global npm directory | Production use | End users |
+| `npx cc-led` | npm cache | Temporary execution | Occasional users |
 | `npm link` (dev) | Source repository | Development mode | Contributors |
 
 **Requirement**: All three methods must produce identical functionality
@@ -125,7 +125,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 
 ```json
 {
-  "name": "@cc-led/cli",
+  "name": "cc-led",
   "version": "0.0.1",
   "engines": {
     "node": ">=16.0.0"
@@ -149,8 +149,8 @@ cc-led --board xiao-rp2040 compile LEDBlink
 ```
 
 **Global Installation Support**:
-- Can be installed with `npm install -g @cc-led/cli`
-- Works with `npx @cc-led/cli` without installation
+- Can be installed with `npm install -g cc-led`
+- Works with `npx cc-led` without installation
 - Development with `npm link` for testing
 
 ### 2. Arduino CLI Integration
@@ -185,7 +185,7 @@ createLocalConfig() {
 
 #### 4.1 Package Structure (Read-Only)
 ```
-/usr/local/lib/node_modules/@cc-led/cli/    # Linux/Mac global install
+/usr/local/lib/node_modules/cc-led/    # Linux/Mac global install
 C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global install
 
 ├── package.json            # NPM package definition
@@ -241,7 +241,7 @@ Working: C:\Users\<user>\Projects\my-project\
 
 **Linux/Mac**:
 ```
-Package: /usr/local/lib/node_modules/@cc-led/cli/
+Package: /usr/local/lib/node_modules/cc-led/
 Working: /home/<user>/projects/my-project/
 ```
 

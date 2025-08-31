@@ -150,7 +150,7 @@ To migrate from PowerShell scripts to the modern CLI:
 1. **Install the CLI**:
    ```bash
    # Global installation (recommended)
-   npm install -g @cc-led/cli
+   npm install -g cc-led
    
    # Or for development
    npm install
@@ -163,7 +163,7 @@ To migrate from PowerShell scripts to the modern CLI:
    # New: cc-led --board xiao-rp2040 led --color red -p COM3
    
    # Or with npx (no installation needed)
-   # npx @cc-led/cli --board xiao-rp2040 led --color red -p COM3
+   # npx cc-led --board xiao-rp2040 led --color red -p COM3
    ```
 
 3. **Update Claude Code hooks** to use the new CLI commands (see [CLAUDE_CODE_HOOKS.md](CLAUDE_CODE_HOOKS.md))
@@ -175,7 +175,7 @@ To migrate from PowerShell scripts to the modern CLI:
 - **Better error handling**: Clear error messages and validation
 - **Future-proof**: Active development and new features
 - **Global installation**: Install once, use anywhere with `npm install -g`
-- **NPX support**: Use without installation via `npx @cc-led/cli`
+- **NPX support**: Use without installation via `npx cc-led`
 
 ---
 

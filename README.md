@@ -55,7 +55,7 @@ Install the CLI globally via npm:
 
 ```bash
 # Install globally
-npm install -g @cc-led/cli
+npm install -g cc-led
 
 # Install Arduino dependencies for your board
 cc-led --board xiao-rp2040 install        # For XIAO RP2040
@@ -80,17 +80,17 @@ You can also use `npx` without global installation:
 
 ```bash
 # First time setup - install Arduino boards and libraries
-npx @cc-led/cli --board xiao-rp2040 install
+npx cc-led --board xiao-rp2040 install
 
 # Compile the LED control sketch
-npx @cc-led/cli --board xiao-rp2040 compile NeoPixel_SerialControl
+npx cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
 
 # Upload to your board (replace COM3 with your port)
-npx @cc-led/cli --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
+npx cc-led --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
 
 # Control the LED
-npx @cc-led/cli --board xiao-rp2040 led --color red -p COM3
-npx @cc-led/cli --board arduino-uno-r4 led --blink -p COM3
+npx cc-led --board xiao-rp2040 led --color red -p COM3
+npx cc-led --board arduino-uno-r4 led --blink -p COM3
 ```
 
 ### 🔧 Development Setup
