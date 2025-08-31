@@ -1,6 +1,6 @@
 {
   "name": "@cc-led/cli",
-  "version": "0.0.1",
+  "version": "0.0.1-beta",
   "description": "Universal CLI for controlling Arduino board LEDs and managing sketches",
   "main": "src/index.js",
   "type": "module",
