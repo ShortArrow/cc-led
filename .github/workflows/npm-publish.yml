@@ -6,6 +6,10 @@ on:
       - 'v*'  # Trigger on version tags like v1.0.0
   workflow_dispatch:  # Allow manual triggering
 
+permissions:
+  contents: write  # Required for creating releases
+  packages: write  # Required for publishing packages
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -83,14 +87,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ steps.version.outputs.VERSION }}
           body: |
             Changes in this Release
-            - See CHANGELOG.md for details
+            - NPM package: `cc-led@${{ steps.version.outputs.VERSION }}`
+            - Install: `npm install -g cc-led@${{ steps.version.outputs.VERSION }}`
+            - See commits for details
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, 'pre') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
