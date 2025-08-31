@@ -10,7 +10,6 @@ git clone https://github.com/yourusername/cc-led.git
 cd cc-led
 
 # Set up development environment
-cd cli
 npm install
 npm link  # Creates global cc-led command
 
@@ -31,17 +30,16 @@ cc-led --board xiao-rp2040 sketches
 ### Alternative: Run directly without linking
 
 ```bash
-# From the cc-led/cli directory
+# From the cc-led root directory
 node src/cli.js --help
 node src/cli.js boards
-node src/cli.js --board xiao-rp2040 compile ../boards/xiao-rp2040/sketches/LEDBlink
+node src/cli.js --board xiao-rp2040 compile LEDBlink
 node src/cli.js --board xiao-rp2040 led --color red -p COM3
 ```
 
 ### Running Tests
 
 ```bash
-cd cc-led/cli
 npm test           # Run all tests
 npm test:watch     # Watch mode for development
 npm test:coverage  # Generate coverage report
@@ -51,8 +49,7 @@ npm test:coverage  # Generate coverage report
 
 ```bash
 # When done with development
-cd cc-led/cli
-npm unlink
+npm unlink --global
 ```
 
 ### Development Workflow

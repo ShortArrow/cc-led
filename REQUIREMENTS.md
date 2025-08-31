@@ -13,13 +13,22 @@ This document defines the functional requirements and technical specifications f
 ### 1. Multi-Board Architecture
 
 ```text
-cc-led/
-├── cli/                    # Node.js CLI implementation
-├── boards/                 # Board configurations & sketches
-│   ├── xiao-rp2040/       # XIAO RP2040 specific
-│   ├── raspberry-pi-pico/ # Raspberry Pi Pico specific
-│   └── arduino-uno-r4/    # Arduino Uno R4 specific
-└── .arduino/              # Local Arduino environment (auto-generated)
+cc-led/                     # NPM package root (can be installed globally)
+├── package.json           # NPM package definition with global CLI support
+├── src/                   # CLI source code
+│   ├── cli.js            # Main CLI entry point (bin target)
+│   ├── arduino.js        # Arduino CLI wrapper
+│   ├── controller.js     # LED controller via serial
+│   ├── boards/           # Board management system
+│   └── utils/            # Configuration utilities
+├── boards/                # Board configurations & sketches (bundled in package)
+│   ├── xiao-rp2040/      # XIAO RP2040 specific
+│   ├── raspberry-pi-pico/# Raspberry Pi Pico specific
+│   └── arduino-uno-r4/   # Arduino Uno R4 specific
+├── test/                  # Test files
+└── [user working dir]/    # Where user runs cc-led
+    ├── .arduino/          # Local Arduino environment (auto-generated)
+    └── arduino-cli.yaml   # Arduino CLI config (auto-generated)
 ```
 
 **Requirements**:
@@ -85,15 +94,51 @@ echo "SERIAL_PORT=COM3" > .env
 
 ## 🔧 Technical Requirements
 
+### 0. Runtime Directory Behavior Requirements
+
+#### 0.1 Command Execution Context
+
+```bash
+# Example: User runs cc-led from any directory
+cd /home/user/my-project/
+cc-led --board xiao-rp2040 compile LEDBlink
+```
+
+**Required Behavior**:
+1. **Package Resolution**: CLI must locate board files in package installation directory
+2. **Environment Creation**: `.arduino/` and `arduino-cli.yaml` created in `/home/user/my-project/`
+3. **Sketch Access**: Read sketch from package bundled location (read-only)
+4. **Build Output**: Write build files to working directory `.build/` (always writable)
+5. **Working Directory Independence**: Same behavior regardless of where command is run
+
+#### 0.2 Installation Method Compatibility
+
+| Installation Method | Package Location | Behavior | Use Case |
+|-------------------|------------------|----------|----------|
+| `npm install -g @cc-led/cli` | System global npm directory | Production use | End users |
+| `npx @cc-led/cli` | npm cache | Temporary execution | Occasional users |
+| `npm link` (dev) | Source repository | Development mode | Contributors |
+
+**Requirement**: All three methods must produce identical functionality
+
 ### 1. Node.js CLI Specifications
 
 ```json
 {
   "name": "@cc-led/cli",
-  "version": "2.0.0",
+  "version": "0.0.1",
   "engines": {
     "node": ">=16.0.0"
   },
+  "bin": {
+    "cc-led": "./src/cli.js"
+  },
+  "files": [
+    "src/**/*.js",
+    "boards/**/*.json",
+    "boards/**/*.ino",
+    "README.md"
+  ],
   "dependencies": {
     "commander": "^11.0.0",    // CLI framework
     "dotenv": "^16.3.1",       // Environment variable management
@@ -102,6 +147,11 @@ echo "SERIAL_PORT=COM3" > .env
   }
 }
 ```
+
+**Global Installation Support**:
+- Can be installed with `npm install -g @cc-led/cli`
+- Works with `npx @cc-led/cli` without installation
+- Development with `npm link` for testing
 
 ### 2. Arduino CLI Integration
 
@@ -112,14 +162,151 @@ echo "SERIAL_PORT=COM3" > .env
 
 **Implementation**:
 ```javascript
+constructor() {
+  // Use package installation directory for board files and sketches
+  this.packageRoot = join(__dirname, '..');
+  // Current working directory for .arduino and config files
+  this.workingDir = process.cwd();
+}
+
 createLocalConfig() {
-  // Create .arduino directory in current directory
-  // Generate arduino-cli.yaml dynamically
-  // Implement local dependency management
+  // Create .arduino directory in current working directory
+  // Generate arduino-cli.yaml in current working directory
+  // Enables project-specific Arduino environments
 }
 ```
 
-### 3. Board Configuration Specification
+**Directory Strategy**:
+- **Board files & sketches**: Read from package installation directory (`packageRoot`)
+- **Arduino environment**: Created in user's current working directory (`workingDir`)
+- **Build outputs**: Generated in package's sketch directories
+
+### 4. Global Installation File Path Requirements
+
+#### 4.1 Package Structure (Read-Only)
+```
+/usr/local/lib/node_modules/@cc-led/cli/    # Linux/Mac global install
+C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global install
+
+├── package.json            # NPM package definition
+├── src/                    # CLI source code (packageRoot)
+│   ├── cli.js             # Main entry point (bin target)
+│   ├── arduino.js         # Arduino CLI wrapper
+│   ├── controller.js      # LED controller
+│   └── boards/            # Board management
+└── boards/                 # Board configurations & sketches (bundled)
+    ├── xiao-rp2040/       # Board-specific directory
+    │   ├── board.json     # Board configuration
+    │   └── sketches/      # Arduino sketches
+    │       └── LEDBlink/   # Sketch directory
+    │           └── LEDBlink.ino
+    └── arduino-uno-r4/    # Other boards...
+```
+
+#### 4.2 User Working Directory (Generated)
+```
+/any/user/project/          # User's current working directory
+├── .arduino/               # Arduino environment (auto-generated)
+│   ├── data/              # Arduino CLI managed
+│   │   ├── packages/      # Installed platforms and tools
+│   │   ├── downloads/     # Downloaded packages
+│   │   └── libraries/     # User libraries
+│   └── sketches/          # User sketches (optional)
+├── .build/                 # Build outputs (auto-generated)
+│   └── <board-id>/        # e.g., xiao-rp2040
+│       └── <sketch-name>/ # e.g., LEDBlink
+│           ├── *.hex      # Compiled firmware
+│           ├── *.elf      # Debug symbols
+│           └── *.bin      # Binary files
+└── arduino-cli.yaml       # Arduino CLI config (auto-generated)
+```
+
+#### 4.3 Path Resolution Rules
+
+| Path Type | Source | Resolution Strategy |
+|-----------|--------|-------------------|
+| Board configs | `packageRoot/boards/*/board.json` | Package installation directory (read-only) |
+| Sketches | `packageRoot/boards/*/sketches/*` | Package installation directory (read-only) |
+| Arduino environment | `workingDir/.arduino/` | Current working directory (read-write) |
+| Config file | `workingDir/arduino-cli.yaml` | Current working directory (read-write) |
+| Build output | `workingDir/.build/<board-id>/<sketch>/` | Current working directory (read-write) |
+
+#### 4.4 Cross-Platform Path Requirements
+
+**Windows**:
+```
+Package: C:\Users\<user>\AppData\Local\Volta\tools\image\node\<version>\node_modules\@cc-led\cli\
+Working: C:\Users\<user>\Projects\my-project\
+```
+
+**Linux/Mac**:
+```
+Package: /usr/local/lib/node_modules/@cc-led/cli/
+Working: /home/<user>/projects/my-project/
+```
+
+**Development (npm link)**:
+```
+Package: /path/to/cc-led/
+Working: /any/directory/
+```
+
+#### 4.5 File System Operation Requirements
+
+**Package Files (Read-Only)**:
+- All files under `packageRoot` must be treated as read-only
+- No modification of bundled board configurations or sketches
+- Version control does not track generated files
+
+**Working Directory Files (Generated)**:
+- `.arduino/` directory: Full read/write access required
+- `arduino-cli.yaml`: Auto-generated per project, can be overwritten
+- `.build/` directory: Build artifacts with full read/write access
+
+**Security Requirements**:
+- No file operations outside package and working directory
+- No modification of system-wide Arduino CLI configuration
+- User-level permissions only (no sudo/admin required)
+
+**Cleanup Requirements**:
+- `.arduino/`, `.build/`, and `arduino-cli.yaml` can be safely deleted
+- Package files remain untouched after uninstall
+- No global state modification
+- Recommend adding `.arduino/`, `.build/`, and `arduino-cli.yaml` to `.gitignore`
+
+**Environment Isolation Requirements**:
+- Each working directory gets independent Arduino environment
+- Multiple projects can use different board platforms simultaneously
+- No interference between different project Arduino setups
+- Behaves like Python `.venv` - isolated per-project environments
+
+#### 4.6 Implementation Requirements
+
+**Path Resolution Implementation**:
+```javascript
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+class ArduinoCLI {
+  constructor() {
+    // Package installation directory (read-only)
+    this.packageRoot = join(__dirname, '..');
+    // Current working directory (read-write)
+    this.workingDir = process.cwd();
+  }
+}
+```
+
+**Critical Requirements**:
+- Must use `import.meta.url` and `fileURLToPath` for ESM compatibility
+- Package root resolution must work in all npm installation scenarios
+- Working directory must be resolved at runtime, not import time
+- No hardcoded paths or assumptions about installation location
+
+### 5. Board Configuration Specification
 
 ```json
 {

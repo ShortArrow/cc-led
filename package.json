@@ -35,9 +35,10 @@
   },
   "files": [
     "src/**/*.js",
-    "../boards/**/*.json",
-    "../boards/**/*.ino",
+    "boards/**/*.json",
+    "boards/**/*.ino",
     "README.md",
+    "!test/**",
     "!src/**/*.test.js",
     "!src/**/*.env*",
     "!src/**/.*"

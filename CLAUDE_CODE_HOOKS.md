@@ -20,7 +20,7 @@ With cc-led, you can get LED notifications for these events!
 
 ### Software
 - [Claude Code](https://claude.ai/code) with hooks support
-- cc-led CLI installed and working
+- cc-led CLI installed and working (`npm install -g @cc-led/cli` or use `npx`)
 - Board with LED control sketch uploaded
 
 ## 🚀 Quick Setup
@@ -53,6 +53,10 @@ cc-led --board xiao-rp2040 led --off -p COM3
 Add the following to your Claude Code `settings.json`:
 
 ## 🔧 Hook Configuration
+
+### Option 1: Global Installation (Recommended)
+
+If you installed with `npm install -g @cc-led/cli`:
 
 ```json
 {
@@ -97,6 +101,39 @@ Add the following to your Claude Code `settings.json`:
           {
             "type": "command",
             "command": "cc-led --board xiao-rp2040 led --color purple -p COM3"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Option 2: Using npx (Alternative)
+
+If you prefer not to install globally, use `npx`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @cc-led/cli --board xiao-rp2040 led --color blue -p COM3"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Bash|Glob|Grep|Read|Edit|MultiEdit|Write|WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @cc-led/cli --board xiao-rp2040 led --color green -p COM3"
           }
         ]
       }

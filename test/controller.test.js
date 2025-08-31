@@ -21,6 +21,9 @@ vi.mock('serialport', () => ({
       if (cb) cb();
     });
     
+    this.on = vi.fn();
+    this.off = vi.fn();
+    
     this.close = vi.fn((cb) => {
       this.isOpen = false;
       if (cb) cb();

@@ -5,12 +5,14 @@ This project allows controlling the onboard LED on a arduino using a scriptable 
 ## 📁 Project Structure
 
 ```
-cc-led/                          # Project root
-├── arduino-cli.yaml             # Arduino CLI config (uses .arduino/ for installations)
-├── .arduino/                    # Arduino libraries & boards (created by arduino-cli)
-│   └── data/                    # Arduino CLI managed directory
-│       ├── downloads/           # Downloaded board packages
-│       └── packages/            # Installed boards and tools
+cc-led/                          # NPM package root
+├── package.json                 # NPM package definition
+├── src/                         # CLI source code
+│   ├── cli.js                  # Main CLI entry point
+│   ├── arduino.js              # Arduino CLI wrapper
+│   ├── controller.js           # LED controller via serial
+│   ├── boards/                 # Board management
+│   └── utils/                  # Utilities
 ├── boards/                      # Board configurations and sketches
 │   ├── xiao-rp2040/            # XIAO RP2040 support
 │   │   ├── board.json          # Board configuration
@@ -19,12 +21,9 @@ cc-led/                          # Project root
 │   │   ├── board.json          # Board configuration
 │   │   └── sketches/           # Arduino sketches
 │   └── raspberry-pi-pico/      # Raspberry Pi Pico support
-├── cli/                        # Node.js CLI tool
-│   ├── package.json            # NPM package definition
-│   ├── node_modules/           # Node.js dependencies (local)
-│   ├── src/                    # JavaScript source code
-│   └── test/                   # Vitest test files
-└── *.ps1                       # PowerShell scripts (legacy)
+├── test/                        # Vitest test files
+└── legacy/                      # PowerShell scripts (legacy)
+```
 
 ## Support
 
@@ -96,11 +95,28 @@ npx @cc-led/cli --board arduino-uno-r4 led --blink -p COM3
 
 ### 🔧 Development Setup
 
-For contributors and developers working on cc-led itself, see our **[Contributing Guide](CONTRIBUTING.md)** for detailed setup instructions.
+For contributors and developers working on cc-led itself:
+
+```bash
+# Clone the repository
+git clone https://github.com/ShortArrow/cc-led.git
+cd cc-led
+
+# Install dependencies
+npm install
+
+# Link for development
+npm link
+
+# Run tests
+npm test
+```
+
+See our **[Contributing Guide](CONTRIBUTING.md)** for detailed development instructions.
 
 ### Legacy PowerShell Setup
 
-For users of the original PowerShell scripts, see **[LEGACY.md](LEGACY.md)** for setup instructions.
+For users of the original PowerShell scripts, see files in the `legacy/` directory.
 
 > **💡 Recommendation**: New users should use the modern CLI setup above for better cross-platform support and ongoing development.
 
@@ -212,12 +228,22 @@ ls /dev/tty*  # Look for /dev/ttyACM0 or similar
    - Compiled binaries go to `<sketch>/build/`
    - Source remains separate from tools
 
+### Working Directory Behavior
+
+When you run `cc-led` from any directory, it creates:
+
+- **`.arduino/`**: Arduino environment (boards, libraries, tools) in current working directory
+- **`arduino-cli.yaml`**: Configuration file in current working directory  
+- **`build/`**: Compilation output in the sketch directory (inside package)
+
+This design allows each project to have its own isolated Arduino environment, similar to Python's `.venv`.
+
 ### Why This Structure?
 
-- **Separation of Concerns**: Arduino code, Node.js tools, and configurations are clearly separated
-- **Local Dependencies**: Using `.arduino/` keeps Arduino dependencies project-local
-- **NPX Compatible**: The Node.js tool works seamlessly with `npx` without global installation
-- **Version Control**: `.arduino/` and `node_modules/` are gitignored, only source is tracked
+- **Global Installation Ready**: Can be installed with `npm install -g` or used with `npx`
+- **Local Arduino Environment**: Each working directory gets its own `.arduino/` environment
+- **Board & Sketch Bundling**: All board configurations and sketches included in package
+- **Development Friendly**: Simple `npm link` for development, comprehensive test coverage
 
 ## Claude Code Hooks Integration
 
