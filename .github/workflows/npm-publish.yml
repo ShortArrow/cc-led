@@ -47,8 +47,17 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
-      - name: Update package version
-        run: npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
+      - name: Verify package version matches tag
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Tag version: $TAG_VERSION"
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Version mismatch: package.json($PACKAGE_VERSION) != tag($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✅ Version matches tag"
       
       - name: Security audit
         run: npm audit --audit-level high
