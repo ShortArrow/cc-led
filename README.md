@@ -23,6 +23,7 @@ cc-led/                          # NPM package root
 │   └── raspberry-pi-pico/      # Raspberry Pi Pico support
 ├── test/                        # Vitest test files
 └── legacy/                      # PowerShell scripts (legacy)
+```
 
 ## Support
 
