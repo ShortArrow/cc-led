@@ -166,14 +166,30 @@ board_manager:
     // Use working directory for build output (writable location)
     const boardId = board ? board.id : 'default';
     const buildDir = join(this.workingDir, '.build', boardId, sketchName);
+    
+    // Add common library path
+    const commonLibPath = join(this.workingDir, 'boards', 'common');
+    
     try {
-      await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir], logLevel);
+      await this.execute([
+        'compile', 
+        '--fqbn', this.fqbn, 
+        '--build-path', buildDir, 
+        '--library', commonLibPath,
+        sketchDir
+      ], logLevel);
     } catch (error) {
       if (error.message.includes('Platform') && error.message.includes('not found')) {
         console.log('Dependencies missing. Installing automatically...');
         await this.install(logLevel, board);
         console.log('Retrying compilation...');
-        await this.execute(['compile', '--fqbn', this.fqbn, '--build-path', buildDir, sketchDir], logLevel);
+        await this.execute([
+          'compile', 
+          '--fqbn', this.fqbn, 
+          '--build-path', buildDir, 
+          '--library', commonLibPath,
+          sketchDir
+        ], logLevel);
       } else {
         throw error;
       }
