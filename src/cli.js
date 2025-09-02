@@ -42,13 +42,13 @@ program
   .option('-r, --rainbow', 'Activate rainbow effect')
   .action(async (options) => {
     try {
-      // Get board from parent command
-      const boardId = program.opts().board;
-      const board = boardLoader.loadBoard(boardId);
+      // LED command only needs port - no board-specific processing required
+      if (!options.port) {
+        throw new Error('Serial port is required. Use -p or --port option');
+      }
       
       // Convert interval to number
       options.interval = parseInt(options.interval);
-      options.board = board;
       
       await executeCommand(options);
       console.log(chalk.green('✓ Command executed successfully'));

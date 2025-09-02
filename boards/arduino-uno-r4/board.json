@@ -29,6 +29,10 @@
     "SerialLedControl": {
       "path": "sketches/SerialLedControl",
       "description": "Serial control for builtin LED with on/off/blink commands"
+    },
+    "UniversalLedControl": {
+      "path": "sketches/UniversalLedControl",
+      "description": "Universal LED control using common architecture (recommended)"
     }
   },
   "notes": "Uses built-in LED on pin 13. Simple on/off/blink control via serial commands.",
