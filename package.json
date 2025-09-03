@@ -10,7 +10,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:fast": "vitest run --reporter=basic --maxConcurrency=1"
   },
   "keywords": [
     "arduino",

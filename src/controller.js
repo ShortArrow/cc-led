@@ -180,7 +180,12 @@ export class LedController {
     
     // Check if it's already an RGB string
     if (/^\d{1,3},\d{1,3},\d{1,3}$/.test(color)) {
-      return color;
+      const [r, g, b] = color.split(',').map(Number);
+      const inRange = (n) => Number.isInteger(n) && n >= 0 && n <= 255;
+      if (inRange(r) && inRange(g) && inRange(b)) {
+        return `${r},${g},${b}`;
+      }
+      throw new Error(`Invalid color: ${color}. RGB values must be between 0 and 255`);
     }
     
     throw new Error(`Invalid color: ${color}. Use a color name (red, green, blue, etc.) or RGB format (255,0,0)`);

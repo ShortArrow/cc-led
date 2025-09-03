@@ -112,7 +112,7 @@ npm link
 npm test
 ```
 
-See our **[Contributing Guide](CONTRIBUTING.md)** for detailed development instructions.
+See our **[Contributing Guide](docs/CONTRIBUTING.md)** for detailed development instructions.
 
 ### Legacy PowerShell Setup
 
@@ -249,7 +249,15 @@ This design allows each project to have its own isolated Arduino environment, si
 
 Get visual LED notifications for Claude Code events! Set up your Arduino board to light up when the AI agent starts, stops, or uses tools.
 
-**→ See [CLAUDE_CODE_HOOKS.md](CLAUDE_CODE_HOOKS.md)** for complete setup instructions with both modern CLI and legacy PowerShell configurations.
+**→ See [Claude Code Hooks Guide](docs/CLAUDE_CODE_HOOKS.md)** for complete setup instructions with both modern CLI and legacy PowerShell configurations.
+
+## 📖 Documentation
+
+- **[CLI-Serial Protocol Specification](docs/CLI-Serial-Protocol-Specification.md)** - Detailed specification of CLI options, serial commands, and response handling
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Claude Code Hooks Guide](docs/CLAUDE_CODE_HOOKS.md)** - Integration with Claude Code editor
+- **[Legacy Documentation](docs/LEGACY.md)** - Information about the original PowerShell implementation
+- **[Requirements](docs/REQUIREMENTS.md)** - System requirements and dependencies
 
 ## 🤝 Contributing
 
@@ -260,7 +268,7 @@ We welcome contributions! Whether you want to:
 - **Improve the CLI tool**
 - **Fix bugs or add features**
 
-Please see our **[Contributing Guide](CONTRIBUTING.md)** for detailed instructions on:
+Please see our **[Contributing Guide](docs/CONTRIBUTING.md)** for detailed instructions on:
 
 - Adding new board support
 - Creating sketches
