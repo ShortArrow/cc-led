@@ -1,0 +1,11 @@
+CompileFlags:
+  Add: [
+    "-I", "../../../common/src",
+    "-I", "../../../../.arduino/data/libraries",
+    "-I", "../../../../.arduino/data/packages/arduino/tools/arm-none-eabi-gcc",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/renesas_uno/1.5.1/variants/MINIMA",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/renesas_uno/1.5.1/libraries",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/renesas_uno/1.5.1/cores/arduino/api",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/renesas_uno/1.5.1/cores/arduino",
+    "-I", "../../../../.arduino/data/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include",
+  ]
