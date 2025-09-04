@@ -8,11 +8,11 @@
 2. [📊 Test Matrix Overview](#-test-matrix-overview)
 3. [🔥 Phase 1: Basic Function Tests](#-phase-1-basic-function-tests)
 4. [🎯 Phase 2: Boundary & Error Tests](#-phase-2-boundary--error-tests)
-5. [🔄 Phase 3: Priority & Combination Tests](#-phase-3-priority--combination-tests)
+5. [🔄 Phase 3: Priority & CLI Option Conflict Tests](#-phase-3-priority--cli-option-conflict-tests)
 6. [📡 Phase 4: Response Processing Tests](#-phase-4-response-processing-tests)
 7. [💡 Phase 5: Digital LED Special Tests](#-phase-5-digital-led-special-tests)
 8. [⚡ Phase 6: Performance & Resource Tests](#-phase-6-performance--resource-tests)
-9. [🛠️ Test Utilities & Automation](#️-test-utilities--automation)
+9. [🛠️ Test Utilities & Automation](#-test-utilities--automation)
 10. [🔗 Related Documentation](#-related-documentation)
 
 ---

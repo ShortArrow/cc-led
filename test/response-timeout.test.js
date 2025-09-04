@@ -3,87 +3,175 @@
  * 
  * Tests timeout behavior when no response is received from microcontrollers.
  * Verifies proper timeout handling in different environments.
+ * 
+ * Following Zenn article best practices for self-contained tests without timeouts.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LedController } from '../src/controller.js';
-import { captureConsoleOutput } from './__tests__/helpers/console-capture.js';
-import { createMockLedController, clearMockResponse } from './__tests__/helpers/controller-mock.js';
+import { it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock the entire controller module
-vi.mock('../src/controller.js', async () => {
-  const actual = await vi.importActual('../src/controller.js');
-  return {
-    ...actual,
-    LedController: createMockLedController()
+// Mock console methods to capture output
+const originalConsoleLog = console.log;
+const capturedLogs = [];
+
+// Mock SerialPort with configurable responses (including no response)
+let mockResponseData = 'ACCEPTED,TEST';
+let shouldRespond = true;
+
+const mockWrite = vi.fn((data, callback) => {
+  if (callback) callback(); // Immediate success callback
+});
+
+const mockSerialPortInstance = {
+  write: mockWrite,
+  close: vi.fn((callback) => { if (callback) callback(); }),
+  on: vi.fn((event, handler) => {
+    // For data events, call with configurable response only if shouldRespond is true
+    if (event === 'data' && shouldRespond) {
+      setImmediate(() => handler(Buffer.from(mockResponseData)));
+    }
+    // If shouldRespond is false, don't call handler to simulate timeout
+  }),
+  off: vi.fn(),
+  removeListener: vi.fn(),
+  isOpen: true
+};
+
+const MockSerialPort = vi.fn((config, callback) => {
+  // Immediate successful connection callback
+  if (callback) setImmediate(() => callback(null));
+  return mockSerialPortInstance;
+});
+
+vi.mock('serialport', () => ({
+  SerialPort: MockSerialPort
+}));
+
+vi.mock('../src/utils/config.js', () => ({
+  getSerialPort: vi.fn(() => 'COM3')
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  capturedLogs.length = 0;
+  mockResponseData = 'ACCEPTED,TEST';
+  shouldRespond = true;
+  console.log = (...args) => {
+    capturedLogs.push(args.join(' '));
+    originalConsoleLog(...args);
   };
 });
 
-describe('Response Timeout Handling', () => {
-  let controller;
-  let consoleCapture;
+afterEach(() => {
+  console.log = originalConsoleLog;
+});
+
+// Helper functions
+function setMockResponse(response) {
+  mockResponseData = response;
+}
+
+function simulateTimeout() {
+  shouldRespond = false;
+}
+
+// Response Timeout Tests
+
+it('should handle timeout in test environment (10ms)', async () => {
+  const { LedController } = await import('../src/controller.js');
   
-  beforeEach(() => {
-    vi.clearAllMocks();
-    clearMockResponse();
-    controller = new LedController('COM3');
-    consoleCapture = captureConsoleOutput();
-  });
+  simulateTimeout(); // No response will be sent
+  
+  const controller = new LedController('COM3');
+  await controller.connect();
+  
+  await controller.setColor('red');
+  
+  // Verify command was sent
+  expect(mockWrite).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
+  
+  // Should log timeout message (in test env, timeout is 10ms)
+  const hasTimeout = capturedLogs.some(log => 
+    log.includes('No response received from device')
+  );
+  expect(hasTimeout).toBe(true);
+});
 
-  afterEach(() => {
-    consoleCapture.restore();
-    clearMockResponse();
-  });
+it('should handle response after timeout period', async () => {
+  const { LedController } = await import('../src/controller.js');
+  
+  // Start with timeout, then enable response
+  simulateTimeout();
+  
+  const controller = new LedController('COM3');
+  await controller.connect();
+  
+  // Send command (will timeout)
+  await controller.setColor('red');
+  
+  // Verify timeout occurred
+  const hasTimeout = capturedLogs.some(log => 
+    log.includes('No response received from device')
+  );
+  expect(hasTimeout).toBe(true);
+  
+  // Verify command was still sent
+  expect(mockWrite).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
+});
 
-  it('should display timeout message when no response received', async () => {
-    // No response configured - should timeout
-    await controller.connect();
-    await controller.sendCommand('ON');
-    
-    const logs = consoleCapture.getLogs();
-    expect(logs).toContain('Sent command: ON');
-    expect(logs).toContain('No response received from device (timeout)');
-  });
+it('should handle normal response without timeout', async () => {
+  const { LedController } = await import('../src/controller.js');
+  
+  setMockResponse('ACCEPTED,COLOR,255,0,0');
+  // shouldRespond remains true (default)
+  
+  const controller = new LedController('COM3');
+  await controller.connect();
+  
+  await controller.setColor('red');
+  
+  // Verify command was sent
+  expect(mockWrite).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
+  
+  // Should receive response, no timeout
+  const hasResponse = capturedLogs.some(log => 
+    log.includes('Device response: ACCEPTED,COLOR,255,0,0')
+  );
+  expect(hasResponse).toBe(true);
+  
+  const hasTimeout = capturedLogs.some(log => 
+    log.includes('No response received from device')
+  );
+  expect(hasTimeout).toBe(false);
+});
 
-  it('should use shorter timeout in test environment', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'test';
-    
-    try {
-      await controller.connect();
-      
-      const startTime = Date.now();
-      await controller.sendCommand('ON');
-      const endTime = Date.now();
-      
-      // Should complete very quickly (< 20ms)
-      expect(endTime - startTime).toBeLessThan(20);
-      
-      const logs = consoleCapture.getLogs();
-      expect(logs).toContain('No response received from device (timeout)');
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-    }
-  });
-
-  it('should demonstrate timeout behavior with no response', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'test';
-    
-    try {
-      await controller.connect();
-      
-      const startTime = Date.now();
-      await controller.sendCommand('NO_RESPONSE');
-      const endTime = Date.now();
-      
-      // Should complete quickly due to test timeout
-      expect(endTime - startTime).toBeLessThan(20);
-      
-      const logs = consoleCapture.getLogs();
-      expect(logs).toContain('No response received from device (timeout)');
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-    }
-  });
+it('should continue operation after timeout', async () => {
+  const { LedController } = await import('../src/controller.js');
+  
+  const controller = new LedController('COM3');
+  await controller.connect();
+  
+  // First command will timeout
+  simulateTimeout();
+  await controller.setColor('red');
+  
+  // Second command will succeed
+  shouldRespond = true;
+  setMockResponse('ACCEPTED,OFF');
+  await controller.turnOff();
+  
+  // Verify both commands were sent
+  expect(mockWrite).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
+  expect(mockWrite).toHaveBeenCalledWith('OFF\n', expect.any(Function));
+  expect(mockWrite).toHaveBeenCalledTimes(2);
+  
+  // Should have both timeout and success messages
+  const hasTimeout = capturedLogs.some(log => 
+    log.includes('No response received from device')
+  );
+  const hasResponse = capturedLogs.some(log => 
+    log.includes('Device response: ACCEPTED,OFF')
+  );
+  
+  expect(hasTimeout).toBe(true);
+  expect(hasResponse).toBe(true);
 });

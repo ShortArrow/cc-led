@@ -6,7 +6,7 @@
  * All tests use mocked child_process.spawn to avoid actual Arduino CLI calls.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ArduinoCLI, compile, deploy, install } from '../src/arduino.js';
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
@@ -35,33 +35,31 @@ vi.mock('../src/utils/config.js', () => ({
 }));
 
 describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', () => {
-  let arduino;
-  let mockProcess;
-
   beforeEach(() => {
-    arduino = new ArduinoCLI();
-    
-    // Setup mock process
-    mockProcess = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      on: vi.fn(),
-      kill: vi.fn()
-    };
-    
-    vi.mocked(spawn).mockReturnValue(mockProcess);
     vi.clearAllMocks();
+    vi.resetModules();
   });
 
   describe('execute() - Low-level command execution', () => {
     it('should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
-      const promise = arduino.execute(['version']);
+      const { ArduinoCLI } = await import('../src/arduino.js');
       
-      // Simulate successful execution
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      await expect(promise).resolves.toBeDefined();
+      vi.mocked(spawn).mockReturnValue(mockProcess);
+      
+      const arduino = new ArduinoCLI();
+      await arduino.execute(['version']);
+      
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
         expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'version']),
@@ -73,13 +71,24 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should include log level parameter when provided', async () => {
-      const promise = arduino.execute(['version'], 'debug');
+      const { ArduinoCLI } = await import('../src/arduino.js');
       
-      // Simulate successful execution
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      await promise;
+      vi.mocked(spawn).mockReturnValue(mockProcess);
+      
+      const arduino = new ArduinoCLI();
+      await arduino.execute(['version'], 'debug');
+      
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
         expect.arrayContaining(['--log', '--log-level', 'debug']),
@@ -88,13 +97,24 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should default to info log level when no level specified', async () => {
-      const promise = arduino.execute(['version']);
+      const { ArduinoCLI } = await import('../src/arduino.js');
       
-      // Simulate successful execution
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      await promise;
+      vi.mocked(spawn).mockReturnValue(mockProcess);
+      
+      const arduino = new ArduinoCLI();
+      await arduino.execute(['version']);
+      
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
         expect.arrayContaining(['--log', '--log-level', 'info']),
@@ -103,34 +123,54 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should throw an error with stderr content when arduino-cli returns non-zero exit code', async () => {
-      const promise = arduino.execute(['invalid']);
+      const { ArduinoCLI } = await import('../src/arduino.js');
       
-      // Simulate error
-      const stderrCallback = mockProcess.stderr.on.mock.calls[0][1];
-      stderrCallback(Buffer.from('Error message'));
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn((event, callback) => {
+          if (event === 'data') {
+            setImmediate(() => callback(Buffer.from('Error message')));
+          }
+        })},
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(1));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(1);
+      vi.mocked(spawn).mockReturnValue(mockProcess);
       
-      await expect(promise).rejects.toThrow('Command failed');
+      const arduino = new ArduinoCLI();
+      await expect(arduino.execute(['invalid'])).rejects.toThrow('Command failed');
     });
   });
 
   describe('compile() - Sketch compilation for XIAO RP2040', () => {
     it('should compile sketch with correct FQBN (Fully Qualified Board Name) and output to build directory', async () => {
+      const { compile } = await import('../src/arduino.js');
+      
       vi.mocked(existsSync).mockReturnValue(true);
       
-      const promise = compile('TestSketch');
+      const mockProcess = {
+        stdout: { on: vi.fn((event, callback) => {
+          if (event === 'data') {
+            setImmediate(() => callback(Buffer.from('Compilation output')));
+          }
+        })},
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      // Get stdout callback and send data
-      const stdoutCallback = mockProcess.stdout.on.mock.calls[0][1];
-      stdoutCallback(Buffer.from('Compilation output'));
+      vi.mocked(spawn).mockReturnValue(mockProcess);
       
-      // Simulate successful completion
-      const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-      closeCallback(0);
-      
-      await promise;
+      await compile('TestSketch');
       
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
@@ -140,6 +180,8 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should validate sketch directory exists before attempting compilation', async () => {
+      const { compile } = await import('../src/arduino.js');
+      
       vi.mocked(existsSync).mockReturnValue(false);
       
       await expect(compile('NonExistent')).rejects.toThrow('Sketch directory');
@@ -147,73 +189,92 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('upload() - Deploy compiled sketches to XIAO RP2040 board', () => {
-    it.skip('should upload compiled sketch to specified serial port (e.g., COM5)', async () => {
+    it('should upload compiled sketch to specified serial port (e.g., COM5)', async () => {
+      const { deploy } = await import('../src/arduino.js');
+      
       vi.mocked(existsSync).mockReturnValue(true);
       
-      const promise = deploy('TestSketch', { port: 'COM5' });
+      const mockProcess = {
+        stdout: { on: vi.fn((event, callback) => {
+          if (event === 'data') {
+            setImmediate(() => callback(Buffer.from('Upload output')));
+          }
+        })},
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      // Get stdout callback and send data
-      setTimeout(() => {
-        const stdoutCallback = mockProcess.stdout.on.mock.calls[0]?.[1];
-        if (stdoutCallback) stdoutCallback(Buffer.from('Upload output'));
-        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-        if (closeCallback) closeCallback(0);
-      }, 10);
+      vi.mocked(spawn).mockReturnValue(mockProcess);
       
-      await promise;
+      await deploy('TestSketch', { port: 'COM5' });
       
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
         expect.arrayContaining(['upload', '--port', 'COM5', '--fqbn', 'rp2040:rp2040:seeed_xiao_rp2040']),
         expect.any(Object)
       );
-    }, 15000);
+    });
 
-    it.skip('should fall back to default serial port (COM3) from config when no port specified', async () => {
+    it('should fall back to default serial port (COM3) from config when no port specified', async () => {
+      const { deploy } = await import('../src/arduino.js');
+      
       vi.mocked(existsSync).mockReturnValue(true);
       
-      const promise = deploy('TestSketch', {});
+      const mockProcess = {
+        stdout: { on: vi.fn((event, callback) => {
+          if (event === 'data') {
+            setImmediate(() => callback(Buffer.from('Upload output')));
+          }
+        })},
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === 'close') {
+            setImmediate(() => callback(0));
+          }
+        }),
+        kill: vi.fn()
+      };
       
-      // Get stdout callback and send data
-      setTimeout(() => {
-        const stdoutCallback = mockProcess.stdout.on.mock.calls[0]?.[1];
-        if (stdoutCallback) stdoutCallback(Buffer.from('Upload output'));
-        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')[1];
-        if (closeCallback) closeCallback(0);
-      }, 10);
+      vi.mocked(spawn).mockReturnValue(mockProcess);
       
-      await promise;
+      await deploy('TestSketch', {});
       
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
         expect.arrayContaining(['upload', '--port', 'COM3', '--fqbn', 'rp2040:rp2040:seeed_xiao_rp2040']),
         expect.any(Object)
       );
-    }, 15000);
+    });
   });
 
   describe('install() - Setup Arduino environment for XIAO RP2040 development', () => {
     it('should execute three sequential commands with arduino-cli.yaml config (ensures .arduino directory usage)', async () => {
+      const { install } = await import('../src/arduino.js');
+      
       let callCount = 0;
       
-      // Mock multiple sequential calls
+      // Mock multiple sequential calls with immediate resolution
       vi.mocked(spawn).mockImplementation(() => {
         callCount++;
         const proc = {
-          stdout: { on: vi.fn() },
+          stdout: { on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setImmediate(() => callback(Buffer.from(`Output ${callCount}`)));
+            }
+          })},
           stderr: { on: vi.fn() },
-          on: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'close') {
+              setImmediate(() => callback(0));
+            }
+          }),
           kill: vi.fn()
         };
-        
-        // Immediately resolve each command
-        setTimeout(() => {
-          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
-          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
-          
-          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
-          if (closeCallback) closeCallback(0);
-        }, 0);
         
         return proc;
       });
@@ -249,6 +310,8 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should use board-specific platform and libraries when board provided', async () => {
+      const { install } = await import('../src/arduino.js');
+      
       const mockBoard = {
         name: 'Test Board',
         platform: { package: 'test:platform' },
@@ -262,19 +325,19 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       vi.mocked(spawn).mockImplementation(() => {
         callCount++;
         const proc = {
-          stdout: { on: vi.fn() },
+          stdout: { on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setImmediate(() => callback(Buffer.from(`Output ${callCount}`)));
+            }
+          })},
           stderr: { on: vi.fn() },
-          on: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'close') {
+              setImmediate(() => callback(0));
+            }
+          }),
           kill: vi.fn()
         };
-        
-        setTimeout(() => {
-          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
-          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
-          
-          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
-          if (closeCallback) closeCallback(0);
-        }, 0);
         
         return proc;
       });
@@ -309,23 +372,25 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should fall back to legacy installation when no board provided', async () => {
+      const { install } = await import('../src/arduino.js');
+      
       let callCount = 0;
       vi.mocked(spawn).mockImplementation(() => {
         callCount++;
         const proc = {
-          stdout: { on: vi.fn() },
+          stdout: { on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setImmediate(() => callback(Buffer.from(`Output ${callCount}`)));
+            }
+          })},
           stderr: { on: vi.fn() },
-          on: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'close') {
+              setImmediate(() => callback(0));
+            }
+          }),
           kill: vi.fn()
         };
-        
-        setTimeout(() => {
-          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
-          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
-          
-          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
-          if (closeCallback) closeCallback(0);
-        }, 0);
         
         return proc;
       });
@@ -351,23 +416,25 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('should pass log level to all installation commands', async () => {
+      const { install } = await import('../src/arduino.js');
+      
       let callCount = 0;
       vi.mocked(spawn).mockImplementation(() => {
         callCount++;
         const proc = {
-          stdout: { on: vi.fn() },
+          stdout: { on: vi.fn((event, callback) => {
+            if (event === 'data') {
+              setImmediate(() => callback(Buffer.from(`Output ${callCount}`)));
+            }
+          })},
           stderr: { on: vi.fn() },
-          on: vi.fn(),
+          on: vi.fn((event, callback) => {
+            if (event === 'close') {
+              setImmediate(() => callback(0));
+            }
+          }),
           kill: vi.fn()
         };
-        
-        setTimeout(() => {
-          const stdoutCallback = proc.stdout.on.mock.calls[0]?.[1];
-          if (stdoutCallback) stdoutCallback(Buffer.from(`Output ${callCount}`));
-          
-          const closeCallback = proc.on.mock.calls.find(call => call[0] === 'close')?.[1];
-          if (closeCallback) closeCallback(0);
-        }, 0);
         
         return proc;
       });
