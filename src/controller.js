@@ -178,8 +178,8 @@ export class LedController {
       return COLORS[lowerColor];
     }
     
-    // Check if it's already an RGB string
-    if (/^\d{1,3},\d{1,3},\d{1,3}$/.test(color)) {
+    // Check if it's a potential RGB string (allowing negative and decimal numbers)
+    if (/^-?\d*\.?\d+,-?\d*\.?\d+,-?\d*\.?\d+$/.test(color)) {
       const [r, g, b] = color.split(',').map(Number);
       const inRange = (n) => Number.isInteger(n) && n >= 0 && n <= 255;
       if (inRange(r) && inRange(g) && inRange(b)) {

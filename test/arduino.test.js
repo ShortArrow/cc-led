@@ -41,7 +41,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('execute() - Low-level command execution', () => {
-    it('should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
+    it('A1-001: should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
       const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
@@ -70,7 +70,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should include log level parameter when provided', async () => {
+    it('A1-002: should include log level parameter when provided', async () => {
       const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
@@ -96,7 +96,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should default to info log level when no level specified', async () => {
+    it('A1-003: should default to info log level when no level specified', async () => {
       const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
@@ -122,7 +122,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should throw an error with stderr content when arduino-cli returns non-zero exit code', async () => {
+    it('A1-004: should throw an error with stderr content when arduino-cli returns non-zero exit code', async () => {
       const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
@@ -148,7 +148,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('compile() - Sketch compilation for XIAO RP2040', () => {
-    it('should compile sketch with correct FQBN (Fully Qualified Board Name) and output to build directory', async () => {
+    it('A1-005: should compile sketch with correct FQBN (Fully Qualified Board Name) and output to build directory', async () => {
       const { compile } = await import('../src/arduino.js');
       
       vi.mocked(existsSync).mockReturnValue(true);
@@ -179,7 +179,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should validate sketch directory exists before attempting compilation', async () => {
+    it('A1-006: should validate sketch directory exists before attempting compilation', async () => {
       const { compile } = await import('../src/arduino.js');
       
       vi.mocked(existsSync).mockReturnValue(false);
@@ -189,7 +189,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('upload() - Deploy compiled sketches to XIAO RP2040 board', () => {
-    it('should upload compiled sketch to specified serial port (e.g., COM5)', async () => {
+    it('A1-007: should upload compiled sketch to specified serial port (e.g., COM5)', async () => {
       const { deploy } = await import('../src/arduino.js');
       
       vi.mocked(existsSync).mockReturnValue(true);
@@ -220,7 +220,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should fall back to default serial port (COM3) from config when no port specified', async () => {
+    it('A1-008: should fall back to default serial port (COM3) from config when no port specified', async () => {
       const { deploy } = await import('../src/arduino.js');
       
       vi.mocked(existsSync).mockReturnValue(true);
@@ -253,7 +253,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
   });
 
   describe('install() - Setup Arduino environment for XIAO RP2040 development', () => {
-    it('should execute three sequential commands with arduino-cli.yaml config (ensures .arduino directory usage)', async () => {
+    it('A1-009: should execute three sequential commands with arduino-cli.yaml config (ensures .arduino directory usage)', async () => {
       const { install } = await import('../src/arduino.js');
       
       let callCount = 0;
@@ -309,7 +309,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should use board-specific platform and libraries when board provided', async () => {
+    it('A1-010: should use board-specific platform and libraries when board provided', async () => {
       const { install } = await import('../src/arduino.js');
       
       const mockBoard = {
@@ -371,7 +371,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should fall back to legacy installation when no board provided', async () => {
+    it('A1-011: should fall back to legacy installation when no board provided', async () => {
       const { install } = await import('../src/arduino.js');
       
       let callCount = 0;
@@ -415,7 +415,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       );
     });
 
-    it('should pass log level to all installation commands', async () => {
+    it('A1-012: should pass log level to all installation commands', async () => {
       const { install } = await import('../src/arduino.js');
       
       let callCount = 0;

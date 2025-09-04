@@ -51,7 +51,7 @@ describe('CLI Parsing - cc-led', () => {
     vi.clearAllMocks();
   });
 
-  it('parses led --on with string interval and port; interval becomes number', async () => {
+  it('E1-001: parses led --on with string interval and port; interval becomes number', async () => {
     const { executeCommand } = await import('../src/controller.js');
     process.argv = ['node', 'cc-led', 'led', '--port', 'COM7', '--on', '--interval', '750'];
     await importCli();
@@ -63,7 +63,7 @@ describe('CLI Parsing - cc-led', () => {
     expect(opts.interval).toBe(750); // converted from string
   });
 
-  it('parses led --blink green --second-color blue --interval 250', async () => {
+  it('E1-002: parses led --blink green --second-color blue --interval 250', async () => {
     const { executeCommand } = await import('../src/controller.js');
     process.argv = ['node', 'cc-led', 'led', '--port', 'COM3', '--blink', 'green', '--second-color', 'blue', '--interval', '250'];
     await importCli();
@@ -75,7 +75,7 @@ describe('CLI Parsing - cc-led', () => {
     expect(opts.interval).toBe(250);
   });
 
-  it('errors when led command missing --port option', async () => {
+  it('E1-003: errors when led command missing --port option', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.argv = ['node', 'cc-led', 'led', '--on'];
     await expect(importCli()).rejects.toThrow('process.exit called');
@@ -83,7 +83,7 @@ describe('CLI Parsing - cc-led', () => {
     consoleSpy.mockRestore();
   });
 
-  it('forwards global --log-level to compile when not provided locally', async () => {
+  it('E1-004: forwards global --log-level to compile when not provided locally', async () => {
     const { compile } = await import('../src/arduino.js');
     process.argv = ['node', 'cc-led', '--log-level', 'debug', 'compile', 'LEDBlink'];
     await importCli();

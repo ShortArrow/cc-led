@@ -58,14 +58,14 @@ describe('CLI Basic Commands', () => {
   });
 
   describe('ON/OFF Commands', () => {
-    it('--on flag should generate ON command', async () => {
+    it('P1-001: --on flag should generate ON command', async () => {
       await executeCommand({ port: 'COM3', on: true });
       
       const serialPort = await mockSerialPort();
       expect(serialPort.write).toHaveBeenCalledWith('ON\n', expect.any(Function));
     });
 
-    it('--off flag should generate OFF command', async () => {
+    it('P1-002: --off flag should generate OFF command', async () => {
       await executeCommand({ port: 'COM3', off: true });
       
       const serialPort = await mockSerialPort();
@@ -74,25 +74,43 @@ describe('CLI Basic Commands', () => {
   });
 
   describe('Color Commands', () => {
-    it('--color red should generate COLOR,255,0,0 command', async () => {
+    it('P1-003: --color red should generate COLOR,255,0,0 command', async () => {
       await executeCommand({ port: 'COM3', color: 'red' });
       
       const serialPort = await mockSerialPort();
       expect(serialPort.write).toHaveBeenCalledWith('COLOR,255,0,0\n', expect.any(Function));
     });
 
-    it('--color blue should generate COLOR,0,0,255 command', async () => {
+    it('P1-006: --color blue should generate COLOR,0,0,255 command', async () => {
       await executeCommand({ port: 'COM3', color: 'blue' });
       
       const serialPort = await mockSerialPort();
       expect(serialPort.write).toHaveBeenCalledWith('COLOR,0,0,255\n', expect.any(Function));
     });
 
-    it('--color "100,150,200" should generate COLOR,100,150,200 command', async () => {
+    it('P1-007: --color "100,150,200" should generate COLOR,100,150,200 command', async () => {
       await executeCommand({ port: 'COM3', color: '100,150,200' });
       
       const serialPort = await mockSerialPort();
       expect(serialPort.write).toHaveBeenCalledWith('COLOR,100,150,200\n', expect.any(Function));
+    });
+  });
+
+  describe('Blink Commands', () => {
+    it('P1-004: --blink default should generate BLINK1,255,255,255,500 command', async () => {
+      await executeCommand({ port: 'COM3', blink: true });
+      
+      const serialPort = await mockSerialPort();
+      expect(serialPort.write).toHaveBeenCalledWith('BLINK1,255,255,255,500\n', expect.any(Function));
+    });
+  });
+
+  describe('Rainbow Commands', () => {
+    it('P1-005: --rainbow default should generate RAINBOW,50 command', async () => {
+      await executeCommand({ port: 'COM3', rainbow: true });
+      
+      const serialPort = await mockSerialPort();
+      expect(serialPort.write).toHaveBeenCalledWith('RAINBOW,50\n', expect.any(Function));
     });
   });
 });
