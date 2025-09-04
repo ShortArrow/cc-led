@@ -65,7 +65,7 @@ Currently uncovered error handling scenarios:
 |-------|------------|------------|----------|----------------------|
 | **Phase 1** | Basic Functions | 5 tests | 🔥 Critical | ✅ Complete |
 | **Phase 2** | Boundary Values | 14 tests | 🔥 High | ✅ Complete |
-| **Phase 3** | Priority & CLI Conflicts | 10 tests | 🟡 Medium | ✅ Complete |
+| **Phase 3** | Priority & CLI Conflicts | 14 tests | 🟡 Medium | ✅ Complete |
 | **Phase 4** | Response Processing | 5 tests | 🔥 High | ✅ Complete |
 | **Phase 5** | Digital LED Protocol | 4 tests | 🟡 Medium | ✅ Complete |
 | **Phase 6** | Performance & Resources | 4 tests | 🟢 Low | ✅ Complete |
@@ -289,6 +289,10 @@ test('P2-013: Interval zero value should throw validation error', async () => {
 | **P3-008** | CLI Conflict | `--rainbow --interval 100 --blink` | `BLINK1,255,255,255,500\n` | Interval inheritance conflict |
 | **P3-009** | CLI Conflict | `--port COM3 --port COM5` | Error or Last-Wins | Multiple port specification |
 | **P3-010** | CLI Conflict | `--interval 500 --interval 1000` | `1000ms` (Last-Wins) | Multiple interval specification |
+| **P3-011** | Port Priority | CLI arg with env var set | CLI arg wins | --port overrides SERIAL_PORT env |
+| **P3-012** | Port Priority | No CLI arg, env var set | Env var used | SERIAL_PORT environment fallback |
+| **P3-013** | Port Priority | No CLI/env, .env file exists | .env value used | .env file as last fallback |
+| **P3-014** | Port Priority | No port in any source | Error thrown | Descriptive error when port missing |
 
 **Self-Contained Priority & CLI Conflict Test Examples:**
 
@@ -754,7 +758,7 @@ test('Digital LED shows no warning for white color', () => {});
 
 1. ✅ **P1-001 to P1-005**: Basic function tests (Phase 1)
 2. ✅ **P2-001 to P2-014**: RGB boundary and interval tests (Phase 2)
-3. ✅ **P3-001 to P3-010**: Command priority and CLI conflict tests (Phase 3)
+3. ✅ **P3-001 to P3-014**: Command priority and CLI conflict tests (Phase 3)
 4. ✅ **P4-001 to P4-005**: Response processing tests (Phase 4)
 5. ✅ **P5-001 to P5-004**: Digital LED protocol tests (Phase 5)
 6. ✅ **P6-001 to P6-004**: Performance and resource tests (Phase 6)
@@ -765,7 +769,7 @@ test('Digital LED shows no warning for white color', () => {});
 ### **🎯 Current Focus: Test Organization & Tracking**
 
 1. **Test prefix standardization**: All tests now follow Px-xxx format for systematic tracking
-2. **Comprehensive test matrix**: 65 total test cases across 9 phases
+2. **Comprehensive test matrix**: 69 total test cases across 9 phases
 3. **Complete protocol coverage**: From basic commands to complex integration scenarios
 
 ### **🔮 Future Enhancements**
