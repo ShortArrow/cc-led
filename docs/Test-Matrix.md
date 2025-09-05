@@ -846,4 +846,4 @@ test('Digital LED shows no warning for white color', () => {});
 
 ---
 
-*Built with ❤️ for systematic validation of cc-led protocol implementation*
+>*Built with ❤️ for systematic validation of cc-led protocol implementation*
