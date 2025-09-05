@@ -5,6 +5,7 @@ This guide explains how to set up LED notifications for Claude Code events using
 ## 🎯 What are Claude Code Hooks?
 
 Claude Code hooks allow you to run custom commands when specific events occur, such as:
+
 - **Stop**: Agent stops or completes a task
 - **Notification**: Important notifications
 - **PostToolUse**: After using tools like Bash, Read, Edit, etc.
@@ -15,10 +16,12 @@ With cc-led, you can get LED notifications for these events!
 ## 📋 Prerequisites
 
 ### Hardware
+
 - Supported Arduino board (e.g., Seeed Studio XIAO RP2040)
 - USB cable for board connection
 
 ### Software
+
 - [Claude Code](https://claude.ai/code) with hooks support
 - cc-led CLI installed and working (`npm install -g cc-led` or use `npx`)
 - Board with LED control sketch uploaded
@@ -149,6 +152,7 @@ For users still using the original PowerShell scripts, see **[LEGACY.md](LEGACY.
 ## 🎨 Customization Ideas
 
 ### Event-Specific Colors
+
 - **Stop**: Blue (task completed)
 - **Error**: Red blinking (something went wrong)
 - **Success**: Green (operation succeeded)  
@@ -171,6 +175,7 @@ cc-led --board xiao-rp2040 led --color "255,128,0" -p COM3  # Custom orange
 ### Board-Specific Examples
 
 #### XIAO RP2040 (RGB LED)
+
 ```json
 {
   "type": "command",
@@ -179,6 +184,7 @@ cc-led --board xiao-rp2040 led --color "255,128,0" -p COM3  # Custom orange
 ```
 
 #### Arduino Uno R4 (Single LED)
+
 ```json
 {
   "type": "command", 
@@ -187,6 +193,7 @@ cc-led --board xiao-rp2040 led --color "255,128,0" -p COM3  # Custom orange
 ```
 
 #### Raspberry Pi Pico (Single LED)
+
 ```json
 {
   "type": "command",
@@ -209,6 +216,7 @@ export SERIAL_PORT=/dev/ttyACM0
 ```
 
 Or create a `.env` file in your project root:
+
 ```
 SERIAL_PORT=COM3
 ```
@@ -216,6 +224,7 @@ SERIAL_PORT=COM3
 ### Finding Your Settings File
 
 Claude Code settings location:
+
 - **Windows**: `%APPDATA%\Claude\claude-code\settings.json`
 - **Mac**: `~/Library/Application Support/Claude/claude-code/settings.json`
 - **Linux**: `~/.config/Claude/claude-code/settings.json`
@@ -229,16 +238,19 @@ Test hooks by running Claude Code commands and watching your LED!
 ### LED Not Responding
 
 1. **Check Board Connection**:
+
    ```bash
    cc-led boards  # Should show your board
    ```
 
 2. **Test Direct Control**:
+
    ```bash
    cc-led --board your-board led --color red -p YOUR_PORT
    ```
 
 3. **Verify Sketch Upload**:
+
    ```bash
    cc-led --board your-board upload NeoPixel_SerialControl -p YOUR_PORT
    ```
@@ -323,6 +335,7 @@ cc-led --board your-board led --help
 ```
 
 Common patterns:
+
 - `--on`, `--off`: Simple on/off
 - `--color red`: Solid colors  
 - `--blink --interval 500`: Blinking

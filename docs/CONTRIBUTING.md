@@ -150,6 +150,7 @@ cc-led --board your-board-name install
 ### Basic Test Sketch: LEDBlink
 
 Every board should include a `LEDBlink` sketch as a **basic write/upload test**. This simple blink sketch:
+
 - Verifies the board connection and upload process works
 - Tests the basic LED functionality
 - Provides a minimal "Hello World" for new users
@@ -261,6 +262,7 @@ npm test:coverage  # Generate coverage report
 ## 📋 Common Board Types
 
 ### RGB LED Boards (NeoPixel/WS2812)
+
 - XIAO RP2040
 - XIAO nRF52840 series
 - Custom boards with addressable LEDs
@@ -268,6 +270,7 @@ npm test:coverage  # Generate coverage report
 **Required:** Power pin management, NeoPixel library
 
 ### Simple GPIO LED Boards  
+
 - Arduino Uno R4
 - Raspberry Pi Pico
 - Most basic Arduino boards
@@ -277,6 +280,7 @@ npm test:coverage  # Generate coverage report
 ### Board-Specific Notes
 
 #### XIAO RP2040
+
 ```json
 {
   "led": {
@@ -289,6 +293,7 @@ npm test:coverage  # Generate coverage report
 ```
 
 #### Raspberry Pi Pico
+
 ```json
 {
   "led": {
@@ -300,6 +305,7 @@ npm test:coverage  # Generate coverage report
 ```
 
 #### Arduino Uno R4
+
 ```json
 {
   "led": {
@@ -313,6 +319,7 @@ npm test:coverage  # Generate coverage report
 ## 🔍 Finding Board Information
 
 ### FQBN (Fully Qualified Board Name)
+
 ```bash
 # List installed boards
 arduino-cli board listall
@@ -324,6 +331,7 @@ arduino-cli board listall
 ```
 
 ### Platform Packages
+
 ```bash
 # Search for platforms
 arduino-cli core search <keyword>
@@ -333,6 +341,7 @@ arduino-cli core install <package>
 ```
 
 ### Required Libraries
+
 ```bash  
 # Search libraries
 arduino-cli lib search <keyword>
@@ -382,6 +391,7 @@ arduino-cli lib install "<library name>"
 ## 🐛 Common Issues
 
 ### Board Not Detected
+
 ```bash
 # Check FQBN
 arduino-cli board listall | grep <keyword>
@@ -391,6 +401,7 @@ arduino-cli core list
 ```
 
 ### Compilation Errors
+
 ```bash
 # Check library dependencies
 arduino-cli lib list
@@ -400,6 +411,7 @@ arduino-cli lib install "<library name>"
 ```
 
 ### Upload Errors
+
 ```bash
 # Check connected boards
 arduino-cli board list
