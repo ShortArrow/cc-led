@@ -13,9 +13,9 @@
 7. [💡 Phase 5: Digital LED Special Tests](#-phase-5-digital-led-special-tests)
 8. [⚡ Phase 6: Performance & Resource Tests](#-phase-6-performance--resource-tests)
 9. [🔧 Phase 7: Arduino Integration Tests](#-phase-7-arduino-integration-tests)
-10. [⚙️ Phase 8: Config & Environment Tests](#phase-8-config--environment-tests)
+10. [⚙️ Phase 8: Config & Environment Tests](#⚙️-phase-8-config--environment-tests)
 11. [🌐 Phase 9: End-to-End CLI Tests](#-phase-9-end-to-end-cli-tests)
-12. [🛠️ Test Utilities & Automation](#test-utilities--automation)
+12. [🛠️ Test Utilities & Automation](#🛠️-test-utilities--automation)
 13. [🔗 Related Documentation](#-related-documentation)
 
 ---
