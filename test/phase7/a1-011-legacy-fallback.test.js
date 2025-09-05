@@ -1,8 +1,8 @@
 /**
- * @fileoverview A1-007: Sketch Upload Test - Test-Matrix.md Compliant
+ * @fileoverview A1-011: Legacy Installation Fallback Test - Test-Matrix.md Compliant
  * 
  * Self-contained test following Test-Matrix.md guidelines.
- * Tests: Sketch upload to serial port
+ * Tests: Installation without board configuration uses legacy approach
  */
 
 import { test, expect, vi } from 'vitest';
@@ -39,27 +39,29 @@ vi.mock('path', () => ({
   resolve: vi.fn((...args) => args.join('/').replace(/\/+/g, '/'))
 }));
 
-test('A1-007: Sketch upload to serial port succeeds', async () => {
+test('A1-011: Installation without board uses legacy fallback mechanism', async () => {
   // Clear previous calls
   vi.clearAllMocks();
   
   // Setup: Arduino CLI instance
   const arduino = new ArduinoCLI();
   
-  // Execute: Upload sketch to port
-  await arduino.execute(['upload', '--port', 'COM3', '--fqbn', 'rp2040:rp2040:seeed_xiao_rp2040', 'test-sketch']);
+  // Execute: Generic installation without board-specific configuration
+  await arduino.execute(['core', 'update-index']);
+  await arduino.execute(['lib', 'update-index']);
   
-  // Assert: Command executed with upload parameters
-  expect(mockSpawn).toHaveBeenCalledWith(
+  // Assert: Legacy fallback commands executed
+  expect(mockSpawn).toHaveBeenCalledTimes(2);
+  
+  expect(mockSpawn).toHaveBeenNthCalledWith(1,
     'arduino-cli',
-    expect.arrayContaining([
-      'upload',
-      '--port',
-      'COM3',
-      '--fqbn',
-      'rp2040:rp2040:seeed_xiao_rp2040',
-      'test-sketch'
-    ]),
+    expect.arrayContaining(['core', 'update-index']),
+    expect.objectContaining({ shell: true })
+  );
+  
+  expect(mockSpawn).toHaveBeenNthCalledWith(2,
+    'arduino-cli',
+    expect.arrayContaining(['lib', 'update-index']),
     expect.objectContaining({ shell: true })
   );
 });

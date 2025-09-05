@@ -8,8 +8,15 @@
 import { test, expect, vi } from 'vitest';
 import { ArduinoCLI } from '../../src/arduino.js';
 
-// Mock child_process.spawn
-const mockSpawn = vi.fn();
+// Mock child_process.spawn with hoisting-safe approach
+vi.mock('child_process', () => ({
+  spawn: vi.fn()
+}));
+
+import { spawn } from 'child_process';
+const mockSpawn = vi.mocked(spawn);
+
+// Setup mock behavior
 mockSpawn.mockReturnValue({
   on: vi.fn((event, handler) => {
     if (event === 'close') {
@@ -20,12 +27,16 @@ mockSpawn.mockReturnValue({
   stderr: { on: vi.fn() }
 });
 
-vi.mock('child_process', () => ({
-  spawn: mockSpawn
+vi.mock('fs', () => ({
+  existsSync: vi.fn(() => true),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn()
 }));
 
-vi.mock('fs', () => ({
-  existsSync: vi.fn(() => true)
+vi.mock('path', () => ({
+  join: vi.fn((...args) => args.join('/').replace(/\/+/g, '/')),
+  dirname: vi.fn((p) => p.split('/').slice(0, -1).join('/') || '/'),
+  resolve: vi.fn((...args) => args.join('/').replace(/\/+/g, '/'))
 }));
 
 test('A1-008: Upload without port specification uses configuration default', async () => {

@@ -1,8 +1,8 @@
 /**
- * @fileoverview A1-007: Sketch Upload Test - Test-Matrix.md Compliant
+ * @fileoverview A1-010: Board-Specific Platform and Libraries Test - Test-Matrix.md Compliant
  * 
  * Self-contained test following Test-Matrix.md guidelines.
- * Tests: Sketch upload to serial port
+ * Tests: Platform and libraries installation for specific board
  */
 
 import { test, expect, vi } from 'vitest';
@@ -39,27 +39,29 @@ vi.mock('path', () => ({
   resolve: vi.fn((...args) => args.join('/').replace(/\/+/g, '/'))
 }));
 
-test('A1-007: Sketch upload to serial port succeeds', async () => {
+test('A1-010: Board-specific platform and libraries installation succeeds', async () => {
   // Clear previous calls
   vi.clearAllMocks();
   
   // Setup: Arduino CLI instance
   const arduino = new ArduinoCLI();
   
-  // Execute: Upload sketch to port
-  await arduino.execute(['upload', '--port', 'COM3', '--fqbn', 'rp2040:rp2040:seeed_xiao_rp2040', 'test-sketch']);
+  // Execute: Install board-specific platform and libraries
+  await arduino.execute(['core', 'install', 'rp2040:rp2040']);
+  await arduino.execute(['lib', 'install', 'Adafruit_NeoPixel']);
   
-  // Assert: Command executed with upload parameters
-  expect(mockSpawn).toHaveBeenCalledWith(
+  // Assert: Board-specific setup commands executed
+  expect(mockSpawn).toHaveBeenCalledTimes(2);
+  
+  expect(mockSpawn).toHaveBeenNthCalledWith(1,
     'arduino-cli',
-    expect.arrayContaining([
-      'upload',
-      '--port',
-      'COM3',
-      '--fqbn',
-      'rp2040:rp2040:seeed_xiao_rp2040',
-      'test-sketch'
-    ]),
+    expect.arrayContaining(['core', 'install', 'rp2040:rp2040']),
+    expect.objectContaining({ shell: true })
+  );
+  
+  expect(mockSpawn).toHaveBeenNthCalledWith(2,
+    'arduino-cli',
+    expect.arrayContaining(['lib', 'install', 'Adafruit_NeoPixel']),
     expect.objectContaining({ shell: true })
   );
 });
