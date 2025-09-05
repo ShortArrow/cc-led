@@ -37,12 +37,11 @@ vi.mock('../src/utils/config.js', () => ({
 describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetModules();
+    // Don't reset modules to maintain consistent mocking
   });
 
   describe('execute() - Low-level command execution', () => {
     it('A1-001: should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
-      const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
         stdout: { on: vi.fn() },
@@ -71,8 +70,6 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
     });
 
     it('A1-002: should include log level parameter when provided', async () => {
-      const { ArduinoCLI } = await import('../src/arduino.js');
-      
       const mockProcess = {
         stdout: { on: vi.fn() },
         stderr: { on: vi.fn() },
@@ -91,14 +88,12 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        expect.arrayContaining(['--log', '--log-level', 'debug', 'version']),
         expect.any(Object)
       );
     });
 
     it('A1-003: should default to info log level when no level specified', async () => {
-      const { ArduinoCLI } = await import('../src/arduino.js');
-      
       const mockProcess = {
         stdout: { on: vi.fn() },
         stderr: { on: vi.fn() },
@@ -117,13 +112,12 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       
       expect(spawn).toHaveBeenCalledWith(
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'info']),
+        expect.arrayContaining(['--log', '--log-level', 'info', 'version']),
         expect.any(Object)
       );
     });
 
     it('A1-004: should throw an error with stderr content when arduino-cli returns non-zero exit code', async () => {
-      const { ArduinoCLI } = await import('../src/arduino.js');
       
       const mockProcess = {
         stdout: { on: vi.fn() },
@@ -288,7 +282,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'core', 'update-index']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'core', 'update-index'],
         expect.any(Object)
       );
       
@@ -296,7 +290,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'core', 'install', 'rp2040:rp2040']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'core', 'install', 'rp2040:rp2040'],
         expect.any(Object)
       );
       
@@ -304,7 +298,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'info', '--config-file', 'lib', 'install', '"Adafruit NeoPixel"']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'lib', 'install', '"Adafruit NeoPixel"'],
         expect.any(Object)
       );
     });
@@ -350,7 +344,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['core', 'install', 'test:platform']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'core', 'install', 'test:platform'],
         expect.any(Object)
       );
       
@@ -358,7 +352,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['lib', 'install', '"TestLib1@1.0.0"']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'lib', 'install', '"TestLib1@1.0.0"'],
         expect.any(Object)
       );
       
@@ -366,7 +360,7 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         4,
         'arduino-cli',
-        expect.arrayContaining(['lib', 'install', '"TestLib2"']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'lib', 'install', '"TestLib2"'],
         expect.any(Object)
       );
     });
@@ -403,14 +397,14 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['core', 'install', 'rp2040:rp2040']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'core', 'install', 'rp2040:rp2040'],
         expect.any(Object)
       );
       
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['lib', 'install', '"Adafruit NeoPixel"']),
+        ['--log', '--log-level', 'info', '--config-file', expect.any(String), 'lib', 'install', '"Adafruit NeoPixel"'],
         expect.any(Object)
       );
     });
@@ -445,21 +439,21 @@ describe('ArduinoCLI - Arduino CLI wrapper for XIAO RP2040 board management', ()
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        ['--log', '--log-level', 'debug', '--config-file', expect.any(String), 'core', 'update-index'],
         expect.any(Object)
       );
       
       expect(spawn).toHaveBeenNthCalledWith(
         2,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        ['--log', '--log-level', 'debug', '--config-file', expect.any(String), 'core', 'install', 'rp2040:rp2040'],
         expect.any(Object)
       );
       
       expect(spawn).toHaveBeenNthCalledWith(
         3,
         'arduino-cli',
-        expect.arrayContaining(['--log', '--log-level', 'debug']),
+        ['--log', '--log-level', 'debug', '--config-file', expect.any(String), 'lib', 'install', '"Adafruit NeoPixel"'],
         expect.any(Object)
       );
     });

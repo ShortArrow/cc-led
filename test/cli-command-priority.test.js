@@ -39,8 +39,9 @@ vi.mock('serialport', () => ({
   SerialPort: MockSerialPort
 }));
 
+const mockGetSerialPort = vi.fn(() => 'COM3');
 vi.mock('../src/utils/config.js', () => ({
-  getSerialPort: vi.fn(() => 'COM3')
+  getSerialPort: mockGetSerialPort
 }));
 
 beforeEach(() => {
@@ -221,30 +222,22 @@ it('P3-011: --port argument should override SERIAL_PORT environment variable', a
 
 // P3-012: Environment variable used when no CLI argument
 it('P3-012: SERIAL_PORT environment variable should be used when no --port provided', async () => {
-  // Setup: Mock environment variable
+  // Setup: Mock environment variable and getSerialPort behavior
   const originalEnv = process.env.SERIAL_PORT;
   process.env.SERIAL_PORT = 'COM7';
   
-  // Reset module mocks for clean test
-  vi.resetModules();
-  vi.mock('serialport', () => ({
-    SerialPort: MockSerialPort
-  }));
-  vi.mock('../src/utils/config.js', () => ({
-    getSerialPort: vi.fn((cliPort) => {
-      // Simulate actual priority: CLI > env > .env
-      if (cliPort) return cliPort;
-      if (process.env.SERIAL_PORT) return process.env.SERIAL_PORT;
-      return 'COM3'; // default
-    })
-  }));
+  // Mock getSerialPort to return environment variable when no port provided
+  mockGetSerialPort.mockImplementation((cliPort) => {
+    if (cliPort) return cliPort;
+    return process.env.SERIAL_PORT || 'COM3';
+  });
   
   const { executeCommand } = await import('../src/controller.js');
   
-  // Execute: No CLI port, should use env var
+  // Execute: No port in options, should use env var through getSerialPort()
   await executeCommand({ 
-    // No port specified - should use env var
     on: true
+    // No port specified - LedController will call getSerialPort() and get COM7
   });
   
   // Assert: COM7 from env should be used
@@ -263,44 +256,24 @@ it('P3-012: SERIAL_PORT environment variable should be used when no --port provi
 
 // P3-013: .env file used as last fallback
 it('P3-013: .env file value should be used when no CLI arg or env var', async () => {
-  // Setup: Clear environment variable and mock .env file
+  // Setup: Clear environment variable
   const originalEnv = process.env.SERIAL_PORT;
   delete process.env.SERIAL_PORT;
   
-  // Mock dotenv and config to simulate .env file
-  vi.resetModules();
-  vi.mock('dotenv', () => ({
-    config: vi.fn(() => {
-      // Simulate .env file setting SERIAL_PORT
-      process.env.SERIAL_PORT = 'COM8';
-    })
-  }));
-  
-  vi.mock('serialport', () => ({
-    SerialPort: MockSerialPort
-  }));
-  
-  vi.mock('../src/utils/config.js', () => ({
-    getSerialPort: vi.fn((cliPort) => {
-      // Load .env if no CLI arg provided
-      if (!cliPort && !process.env.SERIAL_PORT) {
-        const { config } = require('dotenv');
-        config(); // This sets process.env.SERIAL_PORT = 'COM8'
-      }
-      
-      // Return priority: CLI > env > .env
-      if (cliPort) return cliPort;
-      if (process.env.SERIAL_PORT) return process.env.SERIAL_PORT;
-      return 'COM3'; // default fallback
-    })
-  }));
+  // Mock getSerialPort to simulate .env file reading behavior
+  mockGetSerialPort.mockImplementation((cliPort) => {
+    if (cliPort) return cliPort;
+    if (process.env.SERIAL_PORT) return process.env.SERIAL_PORT;
+    // Simulate loading from .env file as fallback
+    return 'COM8'; // Simulated .env file value
+  });
   
   const { executeCommand } = await import('../src/controller.js');
   
   // Execute: No CLI port, no env var - should load from .env
   await executeCommand({ 
-    // No port specified - should use .env file
     on: true
+    // No port specified - should fallback to .env file value
   });
   
   // Assert: COM8 from .env should be used
@@ -323,35 +296,17 @@ it('P3-014: should throw descriptive error when port not specified in any source
   const originalEnv = process.env.SERIAL_PORT;
   delete process.env.SERIAL_PORT;
   
-  // Mock modules to simulate no .env file and no defaults
-  vi.resetModules();
-  vi.mock('dotenv', () => ({
-    config: vi.fn(() => {
-      // Simulate .env file not existing or not having SERIAL_PORT
-      // Do not set process.env.SERIAL_PORT
-    })
-  }));
+  // Import the real config module and replace its implementation
+  const { getSerialPort } = await import('../src/utils/config.js');
+  const originalGetSerialPort = getSerialPort;
   
-  vi.mock('serialport', () => ({
-    SerialPort: MockSerialPort
-  }));
-  
-  vi.mock('../src/utils/config.js', () => ({
-    getSerialPort: vi.fn((cliPort) => {
-      // Load .env if no CLI arg provided
-      if (!cliPort && !process.env.SERIAL_PORT) {
-        const { config } = require('dotenv');
-        config(); // This does NOT set SERIAL_PORT
-      }
-      
-      // Check all sources
-      if (cliPort) return cliPort;
-      if (process.env.SERIAL_PORT) return process.env.SERIAL_PORT;
-      
-      // No port found anywhere - throw error
+  // Mock the getSerialPort function to throw when no port is found
+  vi.mocked(getSerialPort).mockImplementation((cliPort) => {
+    if (!cliPort && !process.env.SERIAL_PORT) {
       throw new Error('Serial port not specified. Please provide --port argument, set SERIAL_PORT environment variable, or add SERIAL_PORT to .env file');
-    })
-  }));
+    }
+    return cliPort || process.env.SERIAL_PORT || 'COM3';
+  });
   
   const { executeCommand } = await import('../src/controller.js');
   
@@ -362,6 +317,7 @@ it('P3-014: should throw descriptive error when port not specified in any source
   })).rejects.toThrow('Serial port not specified');
   
   // Cleanup
+  vi.mocked(getSerialPort).mockRestore();
   if (originalEnv !== undefined) {
     process.env.SERIAL_PORT = originalEnv;
   } else {

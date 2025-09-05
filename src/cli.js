@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { executeCommand } from './controller.js';
 import { compile, deploy, install } from './arduino.js';
 import { BoardLoader } from './boards/board-loader.js';
+import { getSerialPort } from './utils/config.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -42,9 +43,11 @@ program
   .option('-r, --rainbow', 'Activate rainbow effect')
   .action(async (options) => {
     try {
-      // LED command only needs port - no board-specific processing required
-      if (!options.port) {
-        throw new Error('Serial port is required. Use -p or --port option');
+      // Try to get serial port from CLI option, environment variable, or .env file
+      try {
+        options.port = getSerialPort(options.port);
+      } catch (error) {
+        throw new Error('Serial port not specified. Please provide --port argument, set SERIAL_PORT environment variable, or add SERIAL_PORT to .env file');
       }
       
       // Convert interval to number

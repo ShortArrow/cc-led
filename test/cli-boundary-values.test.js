@@ -10,12 +10,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeCommand } from '../src/controller.js';
 
+// Create global mock write function
+const globalMockWrite = vi.fn((data, callback) => {
+  if (callback) callback();
+});
+
 // Mock serialport
 vi.mock('serialport', () => {
-  const mockWrite = vi.fn((data, callback) => {
-    if (callback) callback();
-  });
-  
   const mockOn = vi.fn((event, handler) => {
     // Simulate immediate device response
     if (event === 'data') {
@@ -30,7 +31,7 @@ vi.mock('serialport', () => {
       this.path = options.path;
       this.baudRate = options.baudRate;
       this.isOpen = true;
-      this.write = mockWrite;
+      this.write = globalMockWrite;
       this.on = mockOn;
       this.off = vi.fn();
       this.close = vi.fn((cb) => {
@@ -51,28 +52,22 @@ vi.mock('../src/utils/config.js', () => ({
 }));
 
 describe('CLI Boundary Values', () => {
-  const mockSerialPort = async () => {
-    const { SerialPort } = vi.mocked(await import('serialport'));
-    return SerialPort.mock.results[SerialPort.mock.results.length - 1].value;
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
+    globalMockWrite.mockClear();
   });
 
   describe('RGB Color Boundaries', () => {
     it('P2-001: should accept RGB minimum values (0,0,0)', async () => {
       await executeCommand({ port: 'COM3', color: '0,0,0' });
       
-      const serialPort = await mockSerialPort();
-      expect(serialPort.write).toHaveBeenCalledWith('COLOR,0,0,0\n', expect.any(Function));
+      expect(globalMockWrite).toHaveBeenCalledWith('COLOR,0,0,0\n', expect.any(Function));
     });
 
     it('P2-002: should accept RGB maximum values (255,255,255)', async () => {
       await executeCommand({ port: 'COM3', color: '255,255,255' });
       
-      const serialPort = await mockSerialPort();
-      expect(serialPort.write).toHaveBeenCalledWith('COLOR,255,255,255\n', expect.any(Function));
+      expect(globalMockWrite).toHaveBeenCalledWith('COLOR,255,255,255\n', expect.any(Function));
     });
 
     it('P2-003: should reject R channel above maximum (256,0,0)', async () => {
@@ -123,8 +118,7 @@ describe('CLI Boundary Values', () => {
     it('P2-012: should accept minimum interval value (1ms)', async () => {
       await executeCommand({ port: 'COM3', blink: 'red', interval: 1 });
       
-      const serialPort = await mockSerialPort();
-      expect(serialPort.write).toHaveBeenCalledWith('BLINK1,255,0,0,1\n', expect.any(Function));
+      expect(globalMockWrite).toHaveBeenCalledWith('BLINK1,255,0,0,1\n', expect.any(Function));
     });
 
     it('P2-013: should reject zero interval value', async () => {

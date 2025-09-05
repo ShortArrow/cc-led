@@ -133,6 +133,9 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink(color, interval = 500) {
+    if (interval <= 0) {
+      throw new Error('Invalid interval');
+    }
     const rgb = this.parseColor(color);
     if (this.protocol === 'Digital' && color && color !== 'white') {
       console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
