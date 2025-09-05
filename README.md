@@ -63,11 +63,11 @@ cc-led --board arduino-uno-r4 install     # For Arduino Uno R4
 
 # Compile and upload the control sketch
 cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
-cc-led --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
+cc-led --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
 
 # For Arduino Uno R4
 cc-led --board arduino-uno-r4 compile SerialLedControl
-cc-led --board arduino-uno-r4 deploy SerialLedControl -p COM3
+cc-led --board arduino-uno-r4 upload SerialLedControl -p COM3
 
 # Control the LED
 cc-led --board xiao-rp2040 led --color red -p COM3
@@ -86,7 +86,7 @@ npx cc-led --board xiao-rp2040 install
 npx cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
 
 # Upload to your board (replace COM3 with your port)
-npx cc-led --board xiao-rp2040 deploy NeoPixel_SerialControl -p COM3
+npx cc-led --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
 
 # Control the LED
 npx cc-led --board xiao-rp2040 led --color red -p COM3
