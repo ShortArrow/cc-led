@@ -147,7 +147,7 @@ board_manager:
   async compile(sketchName, board = null, logLevel = 'info') {
     let sketchDir;
     
-    if (board && board.supportsSketch(sketchName)) {
+    if (board && typeof board.supportsSketch === 'function' && board.supportsSketch(sketchName)) {
       // Use board-specific sketch location
       const boardsDir = join(this.packageRoot, 'boards', board.id);
       const sketchPath = board.getSketchPath(sketchName);
@@ -158,7 +158,7 @@ board_manager:
     }
     
     if (!existsSync(sketchDir)) {
-      throw new Error(`Sketch directory '${sketchDir}' not found`);
+      throw new Error(`Sketch directory does not exist: ${sketchDir}`);
     }
 
     console.log(`Compiling sketch '${sketchName}' for board '${this.fqbn}'...`);
@@ -209,7 +209,7 @@ board_manager:
   async upload(sketchName, port, board = null, logLevel = 'info') {
     let sketchDir;
     
-    if (board && board.supportsSketch(sketchName)) {
+    if (board && typeof board.supportsSketch === 'function' && board.supportsSketch(sketchName)) {
       // Use board-specific sketch location
       const boardsDir = join(this.packageRoot, 'boards', board.id);
       const sketchPath = board.getSketchPath(sketchName);
@@ -220,7 +220,7 @@ board_manager:
     }
     
     if (!existsSync(sketchDir)) {
-      throw new Error(`Sketch directory '${sketchDir}' not found`);
+      throw new Error(`Sketch directory does not exist: ${sketchDir}`);
     }
 
     // Auto-compile if not compiled

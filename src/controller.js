@@ -208,6 +208,7 @@ export async function executeCommand(options) {
   try {
     await controller.connect();
     
+    // Command priority: on/off > blink > rainbow > color
     if (options.on) {
       await controller.turnOn();
     } else if (options.off) {
@@ -224,10 +225,10 @@ export async function executeCommand(options) {
       } else {
         await controller.blink(blinkColor, options.interval);
       }
-    } else if (options.color) {
-      await controller.setColor(options.color);
     } else if (options.rainbow) {
       await controller.rainbow(options.interval);
+    } else if (options.color) {
+      await controller.setColor(options.color);
     } else {
       throw new Error('No action specified. Use --on, --off, --color, --blink, or --rainbow');
     }
