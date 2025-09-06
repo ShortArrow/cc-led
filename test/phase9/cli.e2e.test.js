@@ -25,7 +25,7 @@ vi.mock('../../src/arduino.js', () => ({
 }));
 
 // Mock BoardLoader to avoid filesystem dependency while allowing board lookups
-vi.mock('../src/boards/board-loader.js', () => ({
+vi.mock('../../src/boards/board-loader.js', () => ({
   BoardLoader: class MockBoardLoader {
     loadBoard(id) {
       return {
@@ -53,7 +53,7 @@ const importCli = async () => {
 };
 
 test('E1-001: CLI parses led --on with string interval and port; interval becomes number', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');
@@ -73,7 +73,7 @@ test('E1-001: CLI parses led --on with string interval and port; interval become
 });
 
 test('E1-002: CLI parses led --blink green --second-color blue --interval 250', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');
@@ -94,7 +94,7 @@ test('E1-002: CLI parses led --blink green --second-color blue --interval 250', 
 });
 
 test('E1-003: CLI validates required --port argument for led command', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');
@@ -113,7 +113,7 @@ test('E1-003: CLI validates required --port argument for led command', async () 
 });
 
 test('E1-004: CLI forwards global --log-level to all subcommands', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { compile } = await import('../../src/arduino.js');
@@ -131,7 +131,7 @@ test('E1-004: CLI forwards global --log-level to all subcommands', async () => {
 });
 
 test('E1-005: CLI parses compile command with board and sketch', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { compile } = await import('../../src/arduino.js');
@@ -151,7 +151,7 @@ test('E1-005: CLI parses compile command with board and sketch', async () => {
 });
 
 test('E1-006: CLI parses upload command with port option', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { deploy } = await import('../../src/arduino.js');
@@ -171,7 +171,7 @@ test('E1-006: CLI parses upload command with port option', async () => {
 });
 
 test('E1-007: CLI parses install command for board dependencies', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { install } = await import('../../src/arduino.js');
@@ -190,7 +190,7 @@ test('E1-007: CLI parses install command for board dependencies', async () => {
 });
 
 test('E1-008: CLI defaults to xiao-rp2040 board when not specified', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');
@@ -209,7 +209,7 @@ test('E1-008: CLI defaults to xiao-rp2040 board when not specified', async () =>
 });
 
 test('E1-009: CLI parses rainbow command with custom interval', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');
@@ -228,7 +228,7 @@ test('E1-009: CLI parses rainbow command with custom interval', async () => {
 });
 
 test('E1-010: CLI handles multiple boolean flags correctly', async () => {
-  // Clear mocks
+  // Clear all mocks for this test
   vi.clearAllMocks();
   
   const { executeCommand } = await import('../../src/controller.js');

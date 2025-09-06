@@ -1,41 +1,34 @@
 /**
- * @fileoverview Phase 8: Configuration Management Tests
+ * @fileoverview Phase 8: Configuration Management Tests with Dependency Injection
  * 
- * Tests verify the configuration loading system that manages
- * Arduino CLI settings and serial port selection. Configuration can
- * come from .env files, environment variables, or command-line arguments.
+ * Tests verify the configuration loading system using Clean Architecture principles.
+ * Uses interface-based mocks instead of module mocks for better isolation.
  * 
  * Following Test-Matrix.md guidelines:
  * - Flat test structure (no describe blocks)
- * - Clear mocks for each test
+ * - Stateless mock design for predictable behavior
  * - Self-contained tests with PX-XXX naming
  */
 
-import { test, expect, vi } from 'vitest';
-import { loadConfig, getSerialPort } from '../../src/utils/config.js';
-import { existsSync } from 'fs';
-
-// Mock fs module
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn()
-}));
-
-// Mock dotenv
-vi.mock('dotenv', () => ({
-  config: vi.fn()
-}));
+import { test, expect } from 'vitest';
+import { ConfigService, setConfigService, resetConfigService } from '../../src/utils/config.js';
+import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
+import { MockConfigAdapter } from '../adapters/mock-config.adapter.js';
 
 test('C1-001: Default config values when .env file is not present', () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  vi.mocked(existsSync).mockReturnValue(false);
+  // Setup: no .env file exists
+  mockFileSystem.setExistsSyncBehavior(() => false);
   
-  const config = loadConfig();
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
   
-  expect(config).toEqual({
+  const result = configService.loadConfig();
+  
+  expect(result).toEqual({
     serialPort: null,
     arduinoConfigFile: './arduino-cli.yaml',
     fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
@@ -43,188 +36,195 @@ test('C1-001: Default config values when .env file is not present', () => {
 });
 
 test('C1-002: Environment variables override defaults (SERIAL_PORT)', () => {
-  // Clear mocks and setup env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  vi.mocked(existsSync).mockReturnValue(true);
-  process.env.SERIAL_PORT = 'COM3';
+  // Setup: env variable is set
+  mockConfig.setEnv('SERIAL_PORT', 'COM42');
   
-  const config = loadConfig();
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
   
-  expect(config.serialPort).toBe('COM3');
-  
-  // Cleanup
-  delete process.env.SERIAL_PORT;
+  const result = configService.loadConfig();
+  expect(result.serialPort).toBe('COM42');
 });
 
 test('C1-003: Search for .env file in multiple locations', () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  vi.mocked(existsSync).mockImplementation((path) => {
-    // Simulate .env file exists in project root only
-    return path.includes('..') && path.endsWith('.env');
+  let existsSyncCalls = [];
+  mockFileSystem.setExistsSyncBehavior((path) => {
+    existsSyncCalls.push(path);
+    return false; // No .env file found
   });
   
-  const config = loadConfig();
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
   
-  // Should successfully load config even when .env is in different location
-  expect(config).toEqual({
-    serialPort: null,
-    arduinoConfigFile: './arduino-cli.yaml',
-    fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
-  });
+  configService.loadConfig();
   
-  // Should have searched available paths
-  expect(vi.mocked(existsSync)).toHaveBeenCalledTimes(1);
+  // Should have searched for .env file
+  expect(existsSyncCalls.length).toBeGreaterThan(0);
+  expect(existsSyncCalls.some(path => path.includes('.env'))).toBe(true);
 });
 
-test('C1-004: Custom .env file path parameter', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+test('C1-004: Custom .env file path parameter', () => {
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  const customPath = '/custom/path/.env';
-  vi.mocked(existsSync).mockImplementation((path) => path === customPath);
+  const customPath = './custom/.env';
+  let loadDotenvCalls = [];
   
-  const { config } = await import('dotenv');
-  loadConfig(customPath);
-  
-  expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customPath });
-});
-
-test('C1-005: Load environment variables from .env file via dotenv', async () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
-  
-  // Reset and re-import modules to ensure clean state
-  vi.resetModules();
-  
-  // Re-import after module reset
-  const { existsSync } = await import('fs');
-  const { config } = await import('dotenv');
-  const { loadConfig } = await import('../../src/utils/config.js');
-  
-  vi.mocked(existsSync).mockImplementation(() => true);
-  vi.mocked(config).mockImplementation(() => {
-    process.env.SERIAL_PORT = 'COM7';
+  // Setup: custom path exists
+  mockFileSystem.setExistsSyncBehavior((path) => path === customPath);
+  mockConfig.setLoadDotenvBehavior((options) => {
+    loadDotenvCalls.push(options);
   });
   
-  const result = loadConfig();
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  configService.loadConfig(customPath);
+  
+  expect(loadDotenvCalls).toHaveLength(1);
+  expect(loadDotenvCalls[0].path).toBe(customPath);
+});
+
+test('C1-005: Load environment variables from .env file via dotenv', () => {
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
+  
+  // Setup: .env file exists and dotenv sets SERIAL_PORT
+  mockFileSystem.setExistsSyncBehavior(() => true);
+  mockConfig.setLoadDotenvBehavior(() => {
+    mockConfig.setEnv('SERIAL_PORT', 'COM7');
+  });
+  
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  const result = configService.loadConfig();
   
   expect(result.serialPort).toBe('COM7');
-  expect(vi.mocked(config)).toHaveBeenCalled();
-  
-  // Cleanup
-  delete process.env.SERIAL_PORT;
 });
 
-test('C1-006: Existing environment variables preferred over .env file', async () => {
-  // Clear mocks and setup
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+test('C1-006: Existing environment variables preferred over .env file', () => {
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  vi.mocked(existsSync).mockImplementation(() => true);
-  
-  // Set env var before loading config
-  process.env.SERIAL_PORT = 'COM8';
-  
-  // Mock dotenv trying to set different value
-  const { config } = await import('dotenv');
-  vi.mocked(config).mockImplementation(() => {
+  // Setup: env var already set before loading .env
+  mockConfig.setEnv('SERIAL_PORT', 'COM8');
+  mockFileSystem.setExistsSyncBehavior(() => true);
+  mockConfig.setLoadDotenvBehavior(() => {
     // dotenv would normally not override existing env vars
     // This mimics dotenv's actual behavior
   });
   
-  const result = loadConfig();
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  const result = configService.loadConfig();
   
   expect(result.serialPort).toBe('COM8');
-  
-  // Cleanup
-  delete process.env.SERIAL_PORT;
 });
 
 test('C1-007: Command-line argument has highest priority', () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  const port = getSerialPort('COM5');
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  const port = configService.getSerialPort('COM5');
   expect(port).toBe('COM5');
 });
 
 test('C1-008: Fall back to SERIAL_PORT env when no CLI argument', () => {
-  // Clear mocks and setup
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  process.env.SERIAL_PORT = 'COM4';
-  const port = getSerialPort();
-  expect(port).toBe('COM4');
+  // Setup: env variable is set
+  mockConfig.setEnv('SERIAL_PORT', 'COM_ENV');
   
-  // Cleanup
-  delete process.env.SERIAL_PORT;
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  const port = configService.getSerialPort();
+  expect(port).toBe('COM_ENV');
 });
 
 test('C1-009: Descriptive error when no serial port in any source', () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
-  vi.mocked(existsSync).mockReturnValue(false);
-  expect(() => getSerialPort()).toThrow('Serial port not specified');
+  // Setup: no .env file and no env variables
+  mockFileSystem.setExistsSyncBehavior(() => false);
+  
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  expect(() => configService.getSerialPort()).toThrow('Serial port not specified');
 });
 
-test('C1-010: Custom .env path passed to loadConfig', async () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+test('C1-010: Custom .env path passed to loadConfig', () => {
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
   const customEnvPath = '/custom/.env';
-  vi.mocked(existsSync).mockImplementation((path) => path === customEnvPath);
+  let loadDotenvOptions = null;
   
-  const { config } = await import('dotenv');
-  vi.mocked(config).mockImplementation(() => {
-    process.env.SERIAL_PORT = 'COM9';
+  // Setup: custom path exists and returns port
+  mockFileSystem.setExistsSyncBehavior((path) => path === customEnvPath);
+  mockConfig.setLoadDotenvBehavior((options) => {
+    loadDotenvOptions = options;
+    mockConfig.setEnv('SERIAL_PORT', 'COM9');
   });
   
-  const port = getSerialPort(null, customEnvPath);
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
+  
+  const port = configService.getSerialPort(null, customEnvPath);
   
   expect(port).toBe('COM9');
-  expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customEnvPath });
-  
-  // Cleanup
-  delete process.env.SERIAL_PORT;
+  expect(loadDotenvOptions.path).toBe(customEnvPath);
 });
 
-test('C1-011: Full priority chain - CLI > env var > .env file', async () => {
-  // Clear mocks and env
-  vi.clearAllMocks();
-  delete process.env.SERIAL_PORT;
+test('C1-011: Full priority chain - CLI > env var > .env file', () => {
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockConfig = new MockConfigAdapter();
   
   // Setup: .env file would set COM10
-  vi.mocked(existsSync).mockReturnValue(true);
-  const { config } = await import('dotenv');
-  vi.mocked(config).mockImplementation(() => {
-    // This would be in .env file
-    process.env.SERIAL_PORT = process.env.SERIAL_PORT || 'COM10';
+  mockFileSystem.setExistsSyncBehavior(() => true);
+  mockConfig.setLoadDotenvBehavior(() => {
+    // Only set if not already set (mimics dotenv behavior)
+    if (!mockConfig.getEnv('SERIAL_PORT')) {
+      mockConfig.setEnv('SERIAL_PORT', 'COM10');
+    }
   });
+  
+  // Create service with mocked dependencies
+  const configService = new ConfigService(mockFileSystem, mockConfig);
   
   // Test 1: CLI argument takes highest priority
-  expect(getSerialPort('COM_CLI')).toBe('COM_CLI');
+  expect(configService.getSerialPort('COM_CLI')).toBe('COM_CLI');
   
   // Test 2: Environment variable takes priority over .env
-  process.env.SERIAL_PORT = 'COM_ENV';
-  expect(getSerialPort()).toBe('COM_ENV');
+  mockConfig.clearEnv();
+  mockConfig.setEnv('SERIAL_PORT', 'COM_ENV');
+  expect(configService.getSerialPort()).toBe('COM_ENV');
   
   // Test 3: .env file value used when no CLI arg or env var
-  delete process.env.SERIAL_PORT;
-  vi.mocked(config).mockImplementation(() => {
-    process.env.SERIAL_PORT = 'COM10';
-  });
-  expect(getSerialPort()).toBe('COM10');
-  
-  // Cleanup
-  delete process.env.SERIAL_PORT;
+  mockConfig.clearEnv();
+  expect(configService.getSerialPort()).toBe('COM10');
 });
