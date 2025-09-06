@@ -22,13 +22,20 @@
     }
   },
   "sketches": {
+    "UniversalLedControl": {
+      "path": "sketches/UniversalLedControl",
+      "description": "Universal LED control with common protocol (GPIO pin 25)",
+      "default": true
+    },
     "LEDBlink": {
       "path": "sketches/LEDBlink",
       "description": "Basic LED blink for write/upload testing (GPIO pin 25)"
     },
     "SerialLedControl": {
       "path": "sketches/SerialLedControl",
-      "description": "Serial-controlled LED for digital GPIO pin 25"
+      "description": "Serial-controlled LED for digital GPIO pin 25",
+      "deprecated": true,
+      "deprecationReason": "Use UniversalLedControl for common protocol compatibility"
     }
   },
   "notes": "Uses built-in GPIO LED on pin 25. Simple on/off control only.",
