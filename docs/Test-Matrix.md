@@ -95,17 +95,47 @@ Currently uncovered error handling scenarios:
 - Use flat test structure for better readability
 
 ### Test Naming Convention
-- Use standardized PX-XXX format for systematic tracking
+
+#### Test ID Prefix Definitions
+The test ID prefixes indicate the category of testing:
+
+- **P** (Protocol): Core protocol and basic functionality tests
+  - P1-xxx: Basic function tests (ON/OFF/COLOR commands)
+  - P2-xxx: Boundary value and input validation tests
+  - P3-xxx: Command priority and conflict resolution tests
+  - P4-xxx: Response processing and microcontroller communication
+  - P5-xxx: Digital LED protocol specific tests
+  - P6-xxx: Performance and resource management tests
+
+- **A** (Arduino): Arduino CLI integration and hardware tests
+  - A1-xxx: Arduino CLI execution and compilation tests
+  - A2-xxx: Arduino CLI command generation and parameter transformation
+
+- **C** (Configuration): Configuration and environment management tests
+  - C1-xxx: Config file loading, environment variables, and priority chain
+
+- **E** (End-to-End): Complete CLI workflow and integration tests
+  - E1-xxx: CLI argument parsing and command execution flow
+
+#### Test ID Format
+- Format: `[Prefix][Phase]-[Number]`
+- Example: `P1-001` = Protocol Phase 1, Test 001
 - Include expected behavior in test names
 - Make test names self-documenting
 
 **Test ID Examples:**
 ```javascript
-// Example: Basic command test
+// Protocol test example
 test('P1-001: CLI --on command sends ON\n to serial port', () => {});
 
-// Example: Boundary validation test  
-test('P2-003: R channel over maximum 256,0,0 should throw validation error', () => {});
+// Arduino integration test example
+test('A1-005: Sketch compilation with FQBN generates build directory', () => {});
+
+// Configuration test example  
+test('C1-007: Command-line argument has highest priority', () => {});
+
+// End-to-end test example
+test('E1-002: CLI parses led --blink green --second-color blue', () => {});
 ```
 
 ---
