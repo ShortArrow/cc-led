@@ -27,6 +27,10 @@ cc-led/                          # NPM package root
 
 ## Support
 
+- Claude Code ✅ Supporte
+- Codex  📅 W.I.P. 
+- Gemini  📅 W.I.P. 
+
 | Board | Status | LED | Signeture | Wiki |
 |----------|--------|------|-----------|------|
 | Seeed Studio XIAO RP2040 | ✅ Supported | RGB | xiao-rp2040 | [Wiki](https://wiki.seeedstudio.com/XIAO-RP2040/) |
