@@ -6,48 +6,79 @@ import { config as dotenvConfig } from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Default configuration constants
+const DEFAULT_CONFIG = {
+  ARDUINO_CONFIG_FILE: './arduino-cli.yaml',
+  FQBN: 'rp2040:rp2040:seeed_xiao_rp2040',
+  ENV_FILE_NAME: '.env'
+};
+
+const ENV_VAR_NAMES = {
+  SERIAL_PORT: 'SERIAL_PORT'
+};
+
 /**
- * Load configuration from .env file
- * @param {string} [envPath] - Optional path to .env file
- * @returns {Object} Configuration object
+ * Load environment variables from .env file if available
+ * @param {string} [envPath] - Optional custom path to .env file
+ * @returns {void}
  */
-export function loadConfig(envPath) {
+function loadDotenvFile(envPath) {
   // Only try runtime locations, avoid package-relative paths
   const possiblePaths = [
     envPath,
-    join(process.cwd(), '.env'),  // Current working directory
+    join(process.cwd(), DEFAULT_CONFIG.ENV_FILE_NAME),  // Current working directory
     // Removed package-relative paths to prevent bundling .env files
   ].filter(Boolean);
   
+  // Try to load .env file from available paths
   for (const configPath of possiblePaths) {
     if (existsSync(configPath)) {
       dotenvConfig({ path: configPath });
       break;
     }
   }
+}
+
+/**
+ * Load application configuration
+ * @param {string} [envPath] - Optional path to .env file
+ * @returns {Object} Configuration object with serialPort, arduinoConfigFile, and fqbn
+ */
+export function loadConfig(envPath) {
+  // Load environment variables from .env file
+  loadDotenvFile(envPath);
   
   return {
-    serialPort: process.env.SERIAL_PORT || null,
-    arduinoConfigFile: './arduino-cli.yaml',
-    fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
+    serialPort: process.env[ENV_VAR_NAMES.SERIAL_PORT] || null,
+    arduinoConfigFile: DEFAULT_CONFIG.ARDUINO_CONFIG_FILE,
+    fqbn: DEFAULT_CONFIG.FQBN
   };
 }
 
 /**
- * Get serial port from config or command line
- * @param {string} [cmdPort] - Port from command line
+ * Get serial port with priority: CLI argument > environment variable > .env file
+ * @param {string} [cmdPort] - Port from command line argument (highest priority)
  * @param {string} [envPath] - Optional path to .env file
- * @returns {string} Serial port
+ * @returns {string} Serial port string
+ * @throws {Error} When no serial port is specified in any source
  */
 export function getSerialPort(cmdPort, envPath) {
+  // Priority 1: Command line argument
   if (cmdPort) {
     return cmdPort;
   }
   
+  // Priority 2: Environment variables (including .env file)
   const config = loadConfig(envPath);
   if (config.serialPort) {
     return config.serialPort;
   }
   
-  throw new Error('Serial port not specified. Use -p option or set SERIAL_PORT in .env file');
+  // No serial port found in any source
+  throw new Error(
+    `Serial port not specified. Please specify using one of these methods:\n` +
+    `  1. Command line: --port <port> or -p <port>\n` +
+    `  2. Environment variable: SERIAL_PORT=<port>\n` +
+    `  3. .env file: SERIAL_PORT=<port>`
+  );
 }

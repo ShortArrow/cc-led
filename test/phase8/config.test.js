@@ -100,10 +100,15 @@ test('C1-005: Load environment variables from .env file via dotenv', async () =>
   vi.clearAllMocks();
   delete process.env.SERIAL_PORT;
   
-  vi.mocked(existsSync).mockReturnValue(true);
+  // Reset and re-import modules to ensure clean state
+  vi.resetModules();
   
-  // Mock dotenv to set env variables when called
+  // Re-import after module reset
+  const { existsSync } = await import('fs');
   const { config } = await import('dotenv');
+  const { loadConfig } = await import('../../src/utils/config.js');
+  
+  vi.mocked(existsSync).mockImplementation(() => true);
   vi.mocked(config).mockImplementation(() => {
     process.env.SERIAL_PORT = 'COM7';
   });
@@ -120,8 +125,9 @@ test('C1-005: Load environment variables from .env file via dotenv', async () =>
 test('C1-006: Existing environment variables preferred over .env file', async () => {
   // Clear mocks and setup
   vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
   
-  vi.mocked(existsSync).mockReturnValue(true);
+  vi.mocked(existsSync).mockImplementation(() => true);
   
   // Set env var before loading config
   process.env.SERIAL_PORT = 'COM8';
