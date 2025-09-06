@@ -83,20 +83,72 @@ These areas require real hardware or advanced testing infrastructure:
 
 ## Test Implementation Guidelines
 
-### Mock Management
-- Clear all mocks before each test execution
-- Use stateless mock design for predictable test behavior
-- Avoid shared mock state between tests
+### Dependency Injection Architecture (Clean Architecture Implementation)
+
+#### Interface-Based Mock Strategy
+The test suite implements Clean Architecture principles using dependency injection with interfaces:
+
+```javascript
+// ✅ RECOMMENDED: Interface-based mocks with dependency injection
+import { ArduinoService } from '../../src/arduino.js';
+import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
+import { MockProcessExecutorAdapter } from '../adapters/mock-process-executor.adapter.js';
+
+test('A1-006: Sketch directory validation using dependency injection', async () => {
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
+  
+  // Configure mock behavior specific to this test
+  mockFileSystem.setExistsSyncBehavior((path) => {
+    return !path.includes('non-existent-sketch');
+  });
+  
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
+  // Test implementation...
+});
+```
+
+#### Mock Management Best Practices
+- **Use stateless interface-based mocks**: Each test creates fresh mock instances
+- **Avoid module mocking (`vi.mock()`)** for internal dependencies - leads to state interference
+- **Configure mock behavior per test**: Use adapter methods like `setExistsSyncBehavior()`
+- **Cross-platform compatibility**: Normalize path separators in mock logic
+
+#### Module Mock Usage Guidelines
+Module mocks should **only** be used for:
+- External dependencies (e.g., `child_process`, `fs` in legacy tests)
+- E2E testing where full system integration is required
+- Third-party libraries that cannot be easily dependency-injected
+
+```javascript
+// ✅ ACCEPTABLE: External dependency mocking for E2E tests
+vi.mock('../../src/controller.js', () => ({
+  executeCommand: vi.fn(async () => {})
+}));
+
+// ❌ AVOID: Internal service mocking - use dependency injection instead
+vi.mock('../../src/arduino.js'); // This causes test interference
+```
 
 ### Anti-pattern Avoidance
-- Avoid complex setup/teardown procedures
-- Minimize beforeEach/afterEach dependencies
-- Keep tests self-contained and independent
+
+#### Eliminated Anti-patterns
+- **❌ Complex beforeEach/afterEach** - Replaced with per-test dependency injection
+- **❌ Module mock state interference** - Solved with interface-based adapters  
+- **❌ Shared mock state** - Each test creates isolated mock instances
+- **❌ Mock reset brittleness** - No longer needed with stateless design
+
+#### Current Best Practices
+- **✅ Self-contained tests**: Each test manages its own dependencies
+- **✅ Predictable mock behavior**: Stateless adapters with per-test configuration
+- **✅ Test independence**: No cross-test state sharing or interference
+- **✅ Clear separation of concerns**: Production vs. test adapters
 
 ### File Structure Priority
 - Prefer directory/file separation over nested describe blocks
 - Group related tests in separate files by functionality
 - Use flat test structure for better readability
+- **NEW:** Organize adapters in `test/adapters/` directory for reusability
 
 ### Test Naming Convention
 
@@ -321,7 +373,8 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 1. **Test prefix standardization**: All tests follow PX-XXX format for systematic tracking
 2. **Comprehensive test matrix**: 97 total test cases across 10 phases - **COMPLETE**
 3. **Complete protocol coverage**: From basic commands to complex integration scenarios
-4. **Known issues**: Limited test interference in full test runs (A1-002, C1-006) - individual runs pass
+4. **Clean Architecture implementation**: **NEW** - Dependency injection with interface-based mocks
+5. **Resolved test interference**: **FIXED** - Phase 7+8 tests now run reliably in full suite
 
 ### Test Quality Assessment
 
@@ -330,12 +383,13 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **Test Coverage** | ✅ Complete | All 10 phases implemented with 97 test cases |
 | **Protocol Validation** | ✅ Complete | Full CLI-to-serial command generation coverage |
 | **Arduino Integration** | ✅ Complete | Comprehensive Arduino CLI command generation tests |
-| **Mock Isolation** | ⚠️ Partial | Some test interference in full runs |
+| **Mock Isolation** | ✅ Complete | **IMPROVED**: Phase 7+8 using interface-based mocks with zero interference |
 | **Test Independence** | ✅ Complete | Self-contained tests with stateless mock design |
+| **Architecture Quality** | ✅ Complete | **NEW**: Clean Architecture with dependency injection implemented |
 
 ### Future Enhancements
 
-1. **Test Isolation Improvement**: Resolve mock state interference between tests
+1. **Phase 9 CLI E2E Test Migration**: Convert remaining module mocks to dependency injection pattern
 2. **Real Hardware Testing**: Integration tests with actual Arduino hardware
 3. **Serial Communication Layer**: Low-level protocol validation with real serial ports
 4. **Performance Benchmarking**: Automated performance regression detection
@@ -345,7 +399,8 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 
 ## Phase 7: Arduino Integration Tests
 
-**Priority: High** - Arduino CLI integration and deployment validation
+**Priority: High** - Arduino CLI integration and deployment validation  
+**Architecture: ✅ Clean Architecture with Dependency Injection** - **COMPLETED**
 
 | Test ID | Category | Test Case | Expected Result | Validation Item |
 |---------|----------|-----------|----------------|-----------------|
@@ -362,11 +417,19 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **A1-011** | Legacy Fallback | Installation without board | Legacy installation | Fallback mechanism |
 | **A1-012** | Log Propagation | Log level passed to all commands | Consistent logging | Parameter propagation |
 
+### Implementation Status: ✅ COMPLETED
+- **All 12 tests converted** to interface-based dependency injection
+- **Zero test interference** in full test suite runs  
+- **Cross-platform compatibility** with path normalization
+- **Stateless mock design** following Test-Matrix.md guidelines
+- **ArduinoService refactored** with FileSystemInterface and ProcessExecutorInterface
+
 ---
 
 ## Phase 8: Config & Environment Tests
 
-**Priority: Medium** - Configuration management and environment variable validation
+**Priority: Medium** - Configuration management and environment variable validation  
+**Architecture: ✅ Clean Architecture with Dependency Injection** - **COMPLETED**
 
 | Test ID | Category | Test Case | Expected Result | Validation Item |
 |---------|----------|-----------|----------------|-----------------|
@@ -381,6 +444,12 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **C1-009** | Error Handling | No serial port in any source | Descriptive error | Error reporting |
 | **C1-010** | Custom Path Pass | Custom .env path to loadConfig | Path correctly passed | Parameter passing |
 | **C1-011** | Full Priority | CLI > env var > .env file | Priority order respected | Complete priority chain |
+
+### Implementation Status: ✅ COMPLETED
+- **All 11 tests converted** to interface-based dependency injection
+- **Eliminated C1-006 test interference** with stateless MockConfigAdapter
+- **ConfigService with dependency injection** using FileSystemInterface and ConfigInterface
+- **100% test pass rate** in both individual and full suite runs
 
 ---
 
