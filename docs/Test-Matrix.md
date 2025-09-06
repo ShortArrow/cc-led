@@ -15,8 +15,9 @@
 9. [🔧 Phase 7: Arduino Integration Tests](#-phase-7-arduino-integration-tests)
 10. [⚙️ Phase 8: Config & Environment Tests](#⚙️-phase-8-config--environment-tests)
 11. [🌐 Phase 9: End-to-End CLI Tests](#-phase-9-end-to-end-cli-tests)
-12. [🛠️ Test Utilities & Automation](#🛠️-test-utilities--automation)
-13. [🔗 Related Documentation](#-related-documentation)
+12. [🛠️ Phase 10: Arduino CLI Command Generation Tests](#🛠️-phase-10-arduino-cli-command-generation-tests)
+13. [🛠️ Test Utilities & Automation](#🛠️-test-utilities--automation)
+14. [🔗 Related Documentation](#-related-documentation)
 
 ---
 
@@ -72,6 +73,7 @@ Currently uncovered error handling scenarios:
 | **Phase 7** | Arduino Integration | 12 tests | 🔥 High | ✅ Complete |
 | **Phase 8** | Config & Environment | 11 tests | 🟡 Medium | ✅ Complete |
 | **Phase 9** | End-to-End CLI | 4 tests | 🔥 High | ✅ Complete |
+| **Phase 10** | Arduino CLI Command Generation | 10 tests | 🔥 High | 🔄 Planned |
 
 ---
 
@@ -765,6 +767,7 @@ test('Digital LED shows no warning for white color', () => {});
 7. ✅ **A1-001 to A1-012**: Arduino integration tests (Phase 7)
 8. ✅ **C1-001 to C1-011**: Config and environment tests (Phase 8)
 9. ✅ **E1-001 to E1-004**: End-to-end CLI tests (Phase 9)
+10. 🔄 **A2-001 to A2-010**: Arduino CLI command generation tests (Phase 10)
 
 ### **🎯 Current Focus: Test Organization & Tracking**
 
@@ -831,6 +834,192 @@ test('Digital LED shows no warning for white color', () => {});
 | **E1-002** | Complex Args | led --blink green --second-color blue | Complex command parsing | Multi-argument handling |
 | **E1-003** | Required Args | led command missing --port | Error message | Required argument validation |
 | **E1-004** | Global Forwarding | Global --log-level forwarded | Log level propagated | Global option forwarding |
+
+---
+
+## 🛠️ Phase 10: Arduino CLI Command Generation Tests
+
+**Priority: High** - CLI option to Arduino CLI command transformation validation
+
+| Test ID | Category | Input | Expected Arduino CLI Command | Validation Item |
+|---------|----------|-------|------------------------------|-----------------|
+| **A2-001** | Board Selection | `--board xiao-rp2040 compile LEDBlink` | `arduino-cli compile --fqbn rp2040:rp2040:seeed_xiao_rp2040 <sketch-path>` | FQBN mapping |
+| **A2-002** | Port Mapping | `upload LEDBlink -p COM3` | `arduino-cli upload --port COM3 --fqbn <fqbn> <sketch-path>` | Port parameter conversion |
+| **A2-003** | Log Level Debug | `--log-level debug compile LEDBlink` | `arduino-cli compile --log-level debug <args>` | Debug log level propagation |
+| **A2-004** | Log Level Trace | `--log-level trace upload LEDBlink` | `arduino-cli upload --log-level trace <args>` | Trace log level propagation |
+| **A2-005** | Build Directory | `compile LEDBlink` | `--build-path <workingDir>/.build/<board-id>/LEDBlink` | Build path generation |
+| **A2-006** | Config File | All commands | `--config-file <workingDir>/arduino-cli.yaml` | Config file usage |
+| **A2-007** | Sketch Path Resolution | `compile NeoPixel_SerialControl` | Resolves to `<packageRoot>/boards/xiao-rp2040/sketches/NeoPixel_SerialControl/NeoPixel_SerialControl.ino` | Sketch path resolution |
+| **A2-008** | Multiple Boards | `--board arduino-uno-r4 compile SerialLedControl` | `arduino-cli compile --fqbn arduino:avr:uno_r4_minima <sketch-path>` | Different board FQBN mapping |
+| **A2-009** | Install Command | `--board xiao-rp2040 install` | `arduino-cli core install rp2040:rp2040` and `arduino-cli lib install "Adafruit NeoPixel@1.15.1"` | Board-specific installation |
+| **A2-010** | Command Sequence | `install` then `compile` then `upload` | Correct arduino-cli command sequence with proper parameters | Command chaining validation |
+
+**Self-Contained Arduino CLI Command Generation Test Examples:**
+
+```javascript
+// ✅ Clear Arduino CLI command generation tests
+test('A2-001: --board xiao-rp2040 generates correct FQBN for compile', async () => {
+  // Setup: Mock Arduino CLI execution capture
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ execFn: mockExecArduinoCLI });
+  
+  // Execute: Compile command with board specification
+  await arduino.compile('LEDBlink', 'xiao-rp2040', { logLevel: 'info' });
+  
+  // Assert: Correct FQBN used in arduino-cli command
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--fqbn rp2040:rp2040:seeed_xiao_rp2040')
+  );
+});
+
+test('A2-002: Port parameter correctly converted for upload command', async () => {
+  // Setup: Mock Arduino CLI and board configuration
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ execFn: mockExecArduinoCLI });
+  
+  // Execute: Upload with port specification
+  await arduino.upload('LEDBlink', 'xiao-rp2040', { port: 'COM3', logLevel: 'info' });
+  
+  // Assert: Port parameter correctly converted
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--port COM3')
+  );
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--fqbn rp2040:rp2040:seeed_xiao_rp2040')
+  );
+});
+
+test('A2-003: Debug log level propagated to arduino-cli', async () => {
+  // Setup: Mock Arduino CLI execution
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Debug output', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ execFn: mockExecArduinoCLI });
+  
+  // Execute: Compile with debug log level
+  await arduino.compile('LEDBlink', 'xiao-rp2040', { logLevel: 'debug' });
+  
+  // Assert: Debug log level passed to arduino-cli
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--log-level debug')
+  );
+});
+
+test('A2-005: Build directory path generated correctly', async () => {
+  // Setup: Mock file system and Arduino CLI
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ 
+    execFn: mockExecArduinoCLI,
+    workingDir: '/test/working/dir'
+  });
+  
+  // Execute: Compile command
+  await arduino.compile('LEDBlink', 'xiao-rp2040', { logLevel: 'info' });
+  
+  // Assert: Build path includes working directory and board-specific structure
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--build-path /test/working/dir/.build/xiao-rp2040/LEDBlink')
+  );
+});
+
+test('A2-006: Config file parameter added to all arduino-cli commands', async () => {
+  // Setup: Mock Arduino CLI with working directory
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ 
+    execFn: mockExecArduinoCLI,
+    workingDir: '/test/working/dir'
+  });
+  
+  // Execute: Any arduino-cli command
+  await arduino.compile('LEDBlink', 'xiao-rp2040', { logLevel: 'info' });
+  
+  // Assert: Config file parameter always included
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--config-file /test/working/dir/arduino-cli.yaml')
+  );
+});
+
+test('A2-007: Sketch path resolution finds correct .ino file', async () => {
+  // Setup: Mock file system and Arduino CLI
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ 
+    execFn: mockExecArduinoCLI,
+    packageRoot: '/package/root'
+  });
+  
+  // Execute: Compile sketch by name
+  await arduino.compile('NeoPixel_SerialControl', 'xiao-rp2040', { logLevel: 'info' });
+  
+  // Assert: Full sketch path resolved correctly
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('/package/root/boards/xiao-rp2040/sketches/NeoPixel_SerialControl/NeoPixel_SerialControl.ino')
+  );
+});
+
+test('A2-008: Different board generates correct FQBN', async () => {
+  // Setup: Mock Arduino CLI execution
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ execFn: mockExecArduinoCLI });
+  
+  // Execute: Compile for Arduino Uno R4
+  await arduino.compile('SerialLedControl', 'arduino-uno-r4', { logLevel: 'info' });
+  
+  // Assert: Arduino Uno R4 FQBN used
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('--fqbn arduino:avr:uno_r4_minima')
+  );
+});
+
+test('A2-009: Board installation generates correct platform and library commands', async () => {
+  // Setup: Mock Arduino CLI execution
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ execFn: mockExecArduinoCLI });
+  
+  // Execute: Install board dependencies
+  await arduino.installBoard('xiao-rp2040');
+  
+  // Assert: Platform installation command
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('arduino-cli core install rp2040:rp2040')
+  );
+  // Assert: Library installation command  
+  expect(mockExecArduinoCLI).toHaveBeenCalledWith(
+    expect.stringContaining('arduino-cli lib install "Adafruit NeoPixel@1.15.1"')
+  );
+});
+
+test('A2-010: Command sequence maintains parameter consistency', async () => {
+  // Setup: Mock Arduino CLI execution tracking
+  const mockExecArduinoCLI = vi.fn().mockResolvedValue({ stdout: 'Success', stderr: '', code: 0 });
+  const arduino = new ArduinoWrapper({ 
+    execFn: mockExecArduinoCLI,
+    workingDir: '/test/dir'
+  });
+  
+  // Execute: Full workflow sequence
+  await arduino.installBoard('xiao-rp2040');
+  await arduino.compile('LEDBlink', 'xiao-rp2040', { logLevel: 'debug' });
+  await arduino.upload('LEDBlink', 'xiao-rp2040', { port: 'COM3', logLevel: 'debug' });
+  
+  // Assert: All commands used consistent config file
+  const allCalls = mockExecArduinoCLI.mock.calls.flat();
+  expect(allCalls.filter(call => call.includes('--config-file /test/dir/arduino-cli.yaml')))
+    .toHaveLength(mockExecArduinoCLI.mock.calls.length);
+    
+  // Assert: Log level consistency in compile and upload
+  expect(allCalls.filter(call => call.includes('--log-level debug'))).toHaveLength(2);
+});
+```
+
+**🚨 Critical Arduino CLI Integration Gaps Addressed:**
+
+This phase addresses the previously missing validation of:
+- **FQBN (Fully Qualified Board Name) mapping** from board IDs
+- **Port parameter transformation** from CLI format to arduino-cli format  
+- **Log level propagation** from cc-led to arduino-cli commands
+- **Build directory path generation** using working directory isolation
+- **Config file parameter injection** for all arduino-cli commands
+- **Sketch path resolution** from name to actual .ino file location
+- **Board-specific installation commands** (platform + libraries)
+- **Command parameter consistency** across workflow sequences
 
 ---
 
