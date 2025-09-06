@@ -35,7 +35,7 @@ cc-led/                          # NPM package root
 |----------|--------|------|-----------|------|
 | Seeed Studio XIAO RP2040 | ✅ Supported | RGB | xiao-rp2040 | [Wiki](https://wiki.seeedstudio.com/XIAO-RP2040/) |
 | Arduino Uno R4 Minima | ✅ Supported | Digital | arduino-uno-r4 | [Wiki](https://docs.arduino.cc/hardware/uno-r4-minima/) |
-| Raspberry Pi Pico | 📅 W.I.P. | Digital | raspberry-pi-pico | [Wiki](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html) |
+| Raspberry Pi Pico | ✅ Supported | Digital | raspberry-pi-pico | [Wiki](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html) |
 | Arduino Uno R4 WiFi | 📅 W.I.P. | Digital | uno-r4-wifi | [Wiki](https://docs.arduino.cc/hardware/uno-r4-wifi/) |
 | Waveshare RA4M1-Zero | 📅 W.I.P. | RGB | ra4m1-zero | [Wiki](https://www.waveshare.com/wiki/RA4M1-Zero) |
 | Seeed Studio XIAO RA4M1 | 📅 W.I.P. | RGB | xiao-ra4m1 | [Wiki](https://wiki.seeedstudio.com/getting_started_xiao_ra4m1/) |
@@ -67,6 +67,7 @@ npm install -g cc-led
 # Install Arduino dependencies for your board
 cc-led --board xiao-rp2040 install        # For XIAO RP2040
 cc-led --board arduino-uno-r4 install     # For Arduino Uno R4
+cc-led --board raspberry-pi-pico install  # For Raspberry Pi Pico
 
 # Compile and upload the control sketch
 cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
@@ -76,9 +77,14 @@ cc-led --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
 cc-led --board arduino-uno-r4 compile SerialLedControl
 cc-led --board arduino-uno-r4 upload SerialLedControl -p COM3
 
+# For Raspberry Pi Pico
+cc-led --board raspberry-pi-pico compile SerialLedControl
+cc-led --board raspberry-pi-pico upload SerialLedControl -p COM3
+
 # Control the LED
 cc-led --board xiao-rp2040 led --color red -p COM3
 cc-led --board arduino-uno-r4 led --blink -p COM3
+cc-led --board raspberry-pi-pico led --on -p COM3
 ```
 
 ### Quick Start with npx (Alternative)
@@ -183,8 +189,11 @@ cc-led --board arduino-uno-r4 led --blink -p COM5                   # Blink (def
 cc-led --board arduino-uno-r4 led --blink --interval 250 -p COM5    # Fast blink (250ms)
 cc-led --board arduino-uno-r4 led --color red -p COM5               # Same as --on (color ignored)
 
-# Other boards (when supported)
-cc-led --board raspberry-pi-pico led --on -p /dev/ttyACM0
+# Raspberry Pi Pico (Digital LED - GPIO pin 25)
+cc-led --board raspberry-pi-pico led --on -p COM6                     # Turn on builtin LED
+cc-led --board raspberry-pi-pico led --off -p COM6                    # Turn off builtin LED
+cc-led --board raspberry-pi-pico led --blink -p COM6                  # Blink (default 500ms)
+cc-led --board raspberry-pi-pico led --blink --interval 100 -p COM6   # Fast blink (100ms)
 ```
 
 #### Port Configuration
