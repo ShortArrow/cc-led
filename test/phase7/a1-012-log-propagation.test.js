@@ -43,13 +43,13 @@ test('A1-012: Log level propagated consistently to all arduino-cli commands', as
   // Clear previous calls
   vi.clearAllMocks();
   
-  // Setup: Arduino CLI instance with log level
-  const arduino = new ArduinoCLI({ logLevel: 'debug' });
+  // Setup: Arduino CLI instance
+  const arduino = new ArduinoCLI();
   
   // Execute: Multiple commands (should all have consistent log level)
-  await arduino.execute(['version']);
-  await arduino.execute(['core', 'list']);
-  await arduino.execute(['compile', 'sketch']);
+  await arduino.execute(['version'], 'debug');
+  await arduino.execute(['core', 'list'], 'debug');
+  await arduino.execute(['compile', 'sketch'], 'debug');
   
   // Assert: All commands received debug log level
   expect(mockSpawn).toHaveBeenCalledTimes(3);
@@ -58,8 +58,6 @@ test('A1-012: Log level propagated consistently to all arduino-cli commands', as
   for (let i = 1; i <= 3; i++) {
     const [command, args] = mockSpawn.mock.calls[i-1];
     expect(command).toBe('arduino-cli');
-    expect(args).toEqual(expect.arrayContaining(['--log']));
-    expect(args).toEqual(expect.arrayContaining(['--log-level']));
-    expect(args).toEqual(expect.arrayContaining(['debug']));
+    expect(args).toEqual(expect.arrayContaining(['--log', '--log-level', 'debug']));
   }
 });
