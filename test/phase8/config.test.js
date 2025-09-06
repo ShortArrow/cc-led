@@ -1,12 +1,17 @@
 /**
- * @fileoverview Configuration management tests
+ * @fileoverview Phase 8: Configuration Management Tests
  * 
- * These tests verify the configuration loading system that manages
+ * Tests verify the configuration loading system that manages
  * Arduino CLI settings and serial port selection. Configuration can
  * come from .env files, environment variables, or command-line arguments.
+ * 
+ * Following Test-Matrix.md guidelines:
+ * - Flat test structure (no describe blocks)
+ * - Clear mocks for each test
+ * - Self-contained tests with PX-XXX naming
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { test, expect, vi } from 'vitest';
 import { loadConfig, getSerialPort } from '../../src/utils/config.js';
 import { existsSync } from 'fs';
 
@@ -21,156 +26,199 @@ vi.mock('dotenv', () => ({
   config: vi.fn()
 }));
 
-describe('Config Utils - Environment and configuration management', () => {
-  beforeEach(() => {
-    // Clear environment variables
-    delete process.env.SERIAL_PORT;
-    vi.clearAllMocks();
+test('C1-001: Default config values when .env file is not present', () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  vi.mocked(existsSync).mockReturnValue(false);
+  
+  const config = loadConfig();
+  
+  expect(config).toEqual({
+    serialPort: null,
+    arduinoConfigFile: './arduino-cli.yaml',
+    fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
   });
+});
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+test('C1-002: Environment variables override defaults (SERIAL_PORT)', () => {
+  // Clear mocks and setup env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  vi.mocked(existsSync).mockReturnValue(true);
+  process.env.SERIAL_PORT = 'COM3';
+  
+  const config = loadConfig();
+  
+  expect(config.serialPort).toBe('COM3');
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
+});
+
+test('C1-003: Search for .env file in multiple locations', () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  vi.mocked(existsSync).mockImplementation((path) => {
+    // Simulate .env file exists in project root only
+    return path.includes('..') && path.endsWith('.env');
   });
-
-  describe('loadConfig() - Load configuration from .env file and environment', () => {
-    it('C1-001: should return default values when .env file is not present', () => {
-      vi.mocked(existsSync).mockReturnValue(false);
-      
-      const config = loadConfig();
-      
-      expect(config).toEqual({
-        serialPort: null,
-        arduinoConfigFile: './arduino-cli.yaml',
-        fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
-      });
-    });
-
-    it('C1-002: should override defaults with values from environment variables (e.g., SERIAL_PORT)', () => {
-      vi.mocked(existsSync).mockReturnValue(true);
-      process.env.SERIAL_PORT = 'COM3';
-      
-      const config = loadConfig();
-      
-      expect(config.serialPort).toBe('COM3');
-    });
-
-    it('C1-003: should search for .env file in multiple locations (cwd, package root, project root)', () => {
-      vi.mocked(existsSync).mockImplementation((path) => {
-        // Simulate .env file exists in project root only
-        return path.includes('..') && path.endsWith('.env');
-      });
-      
-      const config = loadConfig();
-      
-      // Should successfully load config even when .env is in different location
-      expect(config).toEqual({
-        serialPort: null,
-        arduinoConfigFile: './arduino-cli.yaml',
-        fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
-      });
-      
-      // Should have searched available paths (current working directory only for security)
-      expect(vi.mocked(existsSync)).toHaveBeenCalledTimes(1);
-    });
-
-    it('C1-004: should accept custom .env file path as parameter', async () => {
-      const customPath = '/custom/path/.env';
-      vi.mocked(existsSync).mockImplementation((path) => path === customPath);
-      
-      const { config } = await import('dotenv');
-      loadConfig(customPath);
-      
-      expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customPath });
-    });
-
-    it('C1-005: should load environment variables from .env file via dotenv', async () => {
-      vi.mocked(existsSync).mockReturnValue(true);
-      
-      // Mock dotenv to set env variables when called
-      const { config } = await import('dotenv');
-      vi.mocked(config).mockImplementation(() => {
-        process.env.SERIAL_PORT = 'COM7';
-      });
-      
-      const result = loadConfig();
-      
-      expect(result.serialPort).toBe('COM7');
-      expect(vi.mocked(config)).toHaveBeenCalled();
-    });
-
-    it('C1-006: should prefer already-set environment variables over .env file values', async () => {
-      vi.mocked(existsSync).mockReturnValue(true);
-      
-      // Set env var before loading config
-      process.env.SERIAL_PORT = 'COM8';
-      
-      // Mock dotenv trying to set different value
-      const { config } = await import('dotenv');
-      vi.mocked(config).mockImplementation(() => {
-        // dotenv would normally not override existing env vars
-        // This mimics dotenv's actual behavior
-      });
-      
-      const result = loadConfig();
-      
-      expect(result.serialPort).toBe('COM8');
-    });
+  
+  const config = loadConfig();
+  
+  // Should successfully load config even when .env is in different location
+  expect(config).toEqual({
+    serialPort: null,
+    arduinoConfigFile: './arduino-cli.yaml',
+    fqbn: 'rp2040:rp2040:seeed_xiao_rp2040'
   });
+  
+  // Should have searched available paths
+  expect(vi.mocked(existsSync)).toHaveBeenCalledTimes(1);
+});
 
-  describe('getSerialPort() - Serial port resolution with priority order', () => {
-    it('C1-007: should prioritize command-line argument over all other sources', () => {
-      const port = getSerialPort('COM5');
-      expect(port).toBe('COM5');
-    });
+test('C1-004: Custom .env file path parameter', async () => {
+  // Clear mocks
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  const customPath = '/custom/path/.env';
+  vi.mocked(existsSync).mockImplementation((path) => path === customPath);
+  
+  const { config } = await import('dotenv');
+  loadConfig(customPath);
+  
+  expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customPath });
+});
 
-    it('C1-008: should fall back to SERIAL_PORT environment variable when no CLI argument provided', () => {
-      process.env.SERIAL_PORT = 'COM4';
-      const port = getSerialPort();
-      expect(port).toBe('COM4');
-    });
-
-    it('C1-009: should throw descriptive error when no serial port specified in any source', () => {
-      vi.mocked(existsSync).mockReturnValue(false);
-      expect(() => getSerialPort()).toThrow('Serial port not specified');
-    });
-
-    it('C1-010: should pass custom .env path to loadConfig when provided', async () => {
-      const customEnvPath = '/custom/.env';
-      vi.mocked(existsSync).mockImplementation((path) => path === customEnvPath);
-      
-      const { config } = await import('dotenv');
-      vi.mocked(config).mockImplementation(() => {
-        process.env.SERIAL_PORT = 'COM9';
-      });
-      
-      const port = getSerialPort(null, customEnvPath);
-      
-      expect(port).toBe('COM9');
-      expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customEnvPath });
-    });
-
-    it('C1-011: should demonstrate priority order: CLI arg > env var > .env file', async () => {
-      // Setup: .env file would set COM10
-      vi.mocked(existsSync).mockReturnValue(true);
-      const { config } = await import('dotenv');
-      vi.mocked(config).mockImplementation(() => {
-        // This would be in .env file
-        process.env.SERIAL_PORT = process.env.SERIAL_PORT || 'COM10';
-      });
-      
-      // Test 1: CLI argument takes highest priority
-      expect(getSerialPort('COM_CLI')).toBe('COM_CLI');
-      
-      // Test 2: Environment variable takes priority over .env
-      process.env.SERIAL_PORT = 'COM_ENV';
-      expect(getSerialPort()).toBe('COM_ENV');
-      
-      // Test 3: .env file value used when no CLI arg or env var
-      delete process.env.SERIAL_PORT;
-      vi.mocked(config).mockImplementation(() => {
-        process.env.SERIAL_PORT = 'COM10';
-      });
-      expect(getSerialPort()).toBe('COM10');
-    });
+test('C1-005: Load environment variables from .env file via dotenv', async () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  vi.mocked(existsSync).mockReturnValue(true);
+  
+  // Mock dotenv to set env variables when called
+  const { config } = await import('dotenv');
+  vi.mocked(config).mockImplementation(() => {
+    process.env.SERIAL_PORT = 'COM7';
   });
+  
+  const result = loadConfig();
+  
+  expect(result.serialPort).toBe('COM7');
+  expect(vi.mocked(config)).toHaveBeenCalled();
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
+});
+
+test('C1-006: Existing environment variables preferred over .env file', async () => {
+  // Clear mocks and setup
+  vi.clearAllMocks();
+  
+  vi.mocked(existsSync).mockReturnValue(true);
+  
+  // Set env var before loading config
+  process.env.SERIAL_PORT = 'COM8';
+  
+  // Mock dotenv trying to set different value
+  const { config } = await import('dotenv');
+  vi.mocked(config).mockImplementation(() => {
+    // dotenv would normally not override existing env vars
+    // This mimics dotenv's actual behavior
+  });
+  
+  const result = loadConfig();
+  
+  expect(result.serialPort).toBe('COM8');
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
+});
+
+test('C1-007: Command-line argument has highest priority', () => {
+  // Clear mocks
+  vi.clearAllMocks();
+  
+  const port = getSerialPort('COM5');
+  expect(port).toBe('COM5');
+});
+
+test('C1-008: Fall back to SERIAL_PORT env when no CLI argument', () => {
+  // Clear mocks and setup
+  vi.clearAllMocks();
+  
+  process.env.SERIAL_PORT = 'COM4';
+  const port = getSerialPort();
+  expect(port).toBe('COM4');
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
+});
+
+test('C1-009: Descriptive error when no serial port in any source', () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  vi.mocked(existsSync).mockReturnValue(false);
+  expect(() => getSerialPort()).toThrow('Serial port not specified');
+});
+
+test('C1-010: Custom .env path passed to loadConfig', async () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  const customEnvPath = '/custom/.env';
+  vi.mocked(existsSync).mockImplementation((path) => path === customEnvPath);
+  
+  const { config } = await import('dotenv');
+  vi.mocked(config).mockImplementation(() => {
+    process.env.SERIAL_PORT = 'COM9';
+  });
+  
+  const port = getSerialPort(null, customEnvPath);
+  
+  expect(port).toBe('COM9');
+  expect(vi.mocked(config)).toHaveBeenCalledWith({ path: customEnvPath });
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
+});
+
+test('C1-011: Full priority chain - CLI > env var > .env file', async () => {
+  // Clear mocks and env
+  vi.clearAllMocks();
+  delete process.env.SERIAL_PORT;
+  
+  // Setup: .env file would set COM10
+  vi.mocked(existsSync).mockReturnValue(true);
+  const { config } = await import('dotenv');
+  vi.mocked(config).mockImplementation(() => {
+    // This would be in .env file
+    process.env.SERIAL_PORT = process.env.SERIAL_PORT || 'COM10';
+  });
+  
+  // Test 1: CLI argument takes highest priority
+  expect(getSerialPort('COM_CLI')).toBe('COM_CLI');
+  
+  // Test 2: Environment variable takes priority over .env
+  process.env.SERIAL_PORT = 'COM_ENV';
+  expect(getSerialPort()).toBe('COM_ENV');
+  
+  // Test 3: .env file value used when no CLI arg or env var
+  delete process.env.SERIAL_PORT;
+  vi.mocked(config).mockImplementation(() => {
+    process.env.SERIAL_PORT = 'COM10';
+  });
+  expect(getSerialPort()).toBe('COM10');
+  
+  // Cleanup
+  delete process.env.SERIAL_PORT;
 });
