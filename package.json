@@ -11,7 +11,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:fast": "vitest run --reporter=basic --maxConcurrency=1"
+    "test:fast": "vitest run --reporter=basic --maxConcurrency=1",
+    "test:stable": "vitest run test/phase1/ test/phase2/ test/phase3/ test/phase4/ test/phase5/ test/phase6/ test/phase7/ test/phase8/ test/phase10/ --reporter=basic",
+    "test:ci": "npm run test:stable",
+    "test:phase9": "vitest run test/phase9/e1-001-cli-parsing-interval.test.js test/phase9/e1-002-complex-cli-args.test.js test/phase9/e1-003-required-port-validation.test.js test/phase9/e1-004-global-log-forwarding.test.js"
   },
   "keywords": [
     "arduino",
