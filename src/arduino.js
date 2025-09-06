@@ -127,6 +127,12 @@ board_manager:
    */
   async compile(sketchName, board, logLevel = 'info') {
     const sketchPath = join(this.packageRoot, 'sketches', sketchName);
+    
+    // Validate sketch directory exists
+    if (!this.fileSystem.existsSync(sketchPath)) {
+      throw new Error(`Sketch directory does not exist: ${sketchPath}`);
+    }
+    
     const args = ['compile', '--fqbn', board.fqbn || this.fqbn, sketchPath];
     return this.execute(args, logLevel);
   }

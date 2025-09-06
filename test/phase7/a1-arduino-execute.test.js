@@ -1,68 +1,40 @@
 /**
- * @fileoverview A1-001 to A1-004: Arduino CLI Execute Tests
+ * @fileoverview A1-001 to A1-004: Arduino CLI Execute Tests with Dependency Injection
  * 
- * Tests low-level Arduino CLI command execution
+ * Tests low-level Arduino CLI command execution using Clean Architecture principles.
+ * Uses interface-based mocks instead of module mocks for better isolation.
  */
 
-import { it, expect, beforeEach, vi } from 'vitest';
-import { spawn } from 'child_process';
-import { ArduinoCLI } from '../../src/arduino.js';
-
-// Mock child_process
-vi.mock('child_process', () => ({
-  spawn: vi.fn()
-}));
-
-const mockSpawn = vi.mocked(spawn);
-
-const createMockProcess = (exitCode, stdout, stderr) => {
-  const mockProcess = {
-    stdout: { on: vi.fn() },
-    stderr: { on: vi.fn() },
-    on: vi.fn()
-  };
-  
-  // Setup stdout data handler
-  mockProcess.stdout.on.mockImplementation((event, handler) => {
-    if (event === 'data' && stdout) {
-      setImmediate(() => handler(stdout));
-    }
-  });
-  
-  // Setup stderr data handler
-  mockProcess.stderr.on.mockImplementation((event, handler) => {
-    if (event === 'data' && stderr) {
-      setImmediate(() => handler(stderr));
-    }
-  });
-  
-  // Setup exit handler
-  mockProcess.on.mockImplementation((event, handler) => {
-    if (event === 'close') {
-      setImmediate(() => handler(exitCode));
-    }
-  });
-  
-  return mockProcess;
-};
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockSpawn.mockClear();
-  mockSpawn.mockReset();
-});
+import { it, expect, vi } from 'vitest';
+import { ArduinoService } from '../../src/arduino.js';
+import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
+import { MockProcessExecutorAdapter } from '../adapters/mock-process-executor.adapter.js';
 
 it('A1-001: should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
-  // Clear previous calls to ensure clean state
-  vi.clearAllMocks();
-  mockSpawn.mockReturnValue(createMockProcess(0, 'Version info', ''));
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const arduino = new ArduinoCLI();
-  await arduino.execute(['version']);
+  // Setup: successful execution with output
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Version info', '')
+  );
   
-  expect(mockSpawn).toHaveBeenCalledWith(
-    'arduino-cli',
-    expect.arrayContaining(['--log', '--log-level', 'info', '--config-file']),
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
+  
+  const result = await arduino.execute(['version']);
+  
+  expect(result).toBe('Version info');
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  expect(spawnCalls[0].command).toBe('arduino-cli');
+  expect(spawnCalls[0].args).toEqual(
+    expect.arrayContaining(['--log', '--log-level', 'info', '--config-file'])
+  );
+  expect(spawnCalls[0].args).toEqual(expect.arrayContaining(['version']));
+  expect(spawnCalls[0].options).toEqual(
     expect.objectContaining({
       cwd: expect.any(String),
       shell: true
@@ -71,49 +43,71 @@ it('A1-001: should pass configuration file and arguments to arduino-cli and retu
 });
 
 it('A1-002: should include log level parameter when provided', async () => {
-  // Clear previous calls and reset to ensure completely clean state
-  vi.clearAllMocks();
-  mockSpawn.mockReturnValue(createMockProcess(0, 'Debug info', ''));
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const arduino = new ArduinoCLI();
-  await arduino.execute(['version'], 'debug');
-  
-  // Find the call that contains debug (not all calls may be relevant)
-  const debugCall = mockSpawn.mock.calls.find(call => 
-    call[1].includes('--log-level') && call[1].includes('debug')
+  // Setup: successful execution with debug output
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Debug info', '')
   );
   
-  expect(debugCall).toBeDefined();
-  expect(debugCall[0]).toBe('arduino-cli');
-  expect(debugCall[1]).toEqual(expect.arrayContaining(['--log', '--log-level', 'debug']));
-  expect(debugCall[1]).toEqual(expect.arrayContaining(['version']));
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
+  
+  await arduino.execute(['version'], 'debug');
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining(['--log', '--log-level', 'debug']));
+  expect(call.args).toEqual(expect.arrayContaining(['version']));
 });
 
 it('A1-003: should default to info log level when no level specified', async () => {
-  // Clear previous calls to ensure clean state
-  vi.clearAllMocks();
-  mockSpawn.mockReturnValue(createMockProcess(0, 'Info output', ''));
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const arduino = new ArduinoCLI();
-  await arduino.execute(['version']);
-  
-  expect(mockSpawn).toHaveBeenCalledWith(
-    'arduino-cli',
-    expect.arrayContaining(['--log', '--log-level', 'info']),
-    expect.objectContaining({
-      cwd: expect.any(String),
-      shell: true
-    })
+  // Setup: successful execution with info output
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Info output', '')
   );
+  
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
+  
+  await arduino.execute(['version']); // No log level specified
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining(['--log', '--log-level', 'info']));
 });
 
 it('A1-004: should throw an error with stderr content when arduino-cli returns non-zero exit code', async () => {
-  // Clear previous calls to ensure clean state
-  vi.clearAllMocks();
-  mockSpawn.mockReturnValue(createMockProcess(1, '', 'Command failed'));
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const arduino = new ArduinoCLI();
+  // Setup: failure execution with error
+  const errorMessage = 'Command not found';
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createFailureSpawn(1, errorMessage)
+  );
   
-  await expect(arduino.execute(['invalid']))
-    .rejects.toThrow('Command failed with code 1: Command failed');
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
+  
+  await expect(arduino.execute(['invalid-command']))
+    .rejects.toThrow('Command failed with code 1');
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  expect(spawnCalls[0].command).toBe('arduino-cli');
+  expect(spawnCalls[0].args).toEqual(expect.arrayContaining(['invalid-command']));
 });
