@@ -69,22 +69,22 @@ cc-led --board xiao-rp2040 install        # For XIAO RP2040
 cc-led --board arduino-uno-r4 install     # For Arduino Uno R4
 cc-led --board raspberry-pi-pico install  # For Raspberry Pi Pico
 
-# Compile and upload the control sketch
-cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
-cc-led --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
+# Compile and upload the control sketch (same for all boards)
+cc-led --board xiao-rp2040 compile UniversalLedControl
+cc-led --board xiao-rp2040 upload UniversalLedControl -p COM3
 
 # For Arduino Uno R4
-cc-led --board arduino-uno-r4 compile SerialLedControl
-cc-led --board arduino-uno-r4 upload SerialLedControl -p COM3
+cc-led --board arduino-uno-r4 compile UniversalLedControl
+cc-led --board arduino-uno-r4 upload UniversalLedControl -p COM3
 
 # For Raspberry Pi Pico
-cc-led --board raspberry-pi-pico compile SerialLedControl
-cc-led --board raspberry-pi-pico upload SerialLedControl -p COM3
+cc-led --board raspberry-pi-pico compile UniversalLedControl
+cc-led --board raspberry-pi-pico upload UniversalLedControl -p COM3
 
-# Control the LED
-cc-led --board xiao-rp2040 led --color red -p COM3
-cc-led --board arduino-uno-r4 led --blink -p COM3
-cc-led --board raspberry-pi-pico led --on -p COM3
+# Control the LED (no --board needed - universal protocol)
+cc-led led --color red -p COM3      # Works on any board
+cc-led led --blink -p COM3          # Universal blink command  
+cc-led led --on -p COM3             # Universal on command
 ```
 
 ### Quick Start with npx (Alternative)
@@ -95,15 +95,15 @@ You can also use `npx` without global installation:
 # First time setup - install Arduino boards and libraries
 npx cc-led --board xiao-rp2040 install
 
-# Compile the LED control sketch
-npx cc-led --board xiao-rp2040 compile NeoPixel_SerialControl
+# Compile the LED control sketch (same for all boards)
+npx cc-led --board xiao-rp2040 compile UniversalLedControl
 
 # Upload to your board (replace COM3 with your port)
-npx cc-led --board xiao-rp2040 upload NeoPixel_SerialControl -p COM3
+npx cc-led --board xiao-rp2040 upload UniversalLedControl -p COM3
 
-# Control the LED
-npx cc-led --board xiao-rp2040 led --color red -p COM3
-npx cc-led --board arduino-uno-r4 led --blink -p COM3
+# Control the LED (universal protocol)
+npx cc-led led --color red -p COM3   # Works on any board
+npx cc-led led --blink -p COM3       # Universal command
 ```
 
 ### 🔧 Development Setup
@@ -165,35 +165,28 @@ cc-led examples
 #### LED Control Examples
 
 ```bash
-# Default board is xiao-rp2040
+# Universal LED Control (works on all boards)
 cc-led led --on -p COM3                    # Turn LED on (white)
 cc-led led --off -p COM3                   # Turn LED off
 
-# Set solid color
+# Set solid color (RGB boards show color, Digital LEDs show white/on)
 cc-led led --color red -p COM3
 cc-led led --color "255,128,0" -p COM3     # Custom RGB
 
 # Blink single color
 cc-led led --blink --color green --interval 500 -p COM3
 
-# Blink two colors (XIAO RP2040 with RGB LED)
-cc-led --board xiao-rp2040 led --blink --color red --second-color blue --interval 1000 -p COM3
+# Blink two colors (RGB boards alternate colors, Digital LEDs blink white)
+cc-led led --blink --color red --second-color blue --interval 1000 -p COM3
 
-# Rainbow effect (XIAO RP2040 with RGB LED)
-cc-led --board xiao-rp2040 led --rainbow --interval 50 -p COM3
+# Rainbow effect (RGB boards show rainbow, Digital LEDs blink)
+cc-led led --rainbow --interval 50 -p COM3
 
-# Digital LED boards (Arduino Uno R4, etc.)
-cc-led --board arduino-uno-r4 led --on -p COM5                      # Turn on builtin LED
-cc-led --board arduino-uno-r4 led --off -p COM5                     # Turn off builtin LED
-cc-led --board arduino-uno-r4 led --blink -p COM5                   # Blink (default 500ms)
-cc-led --board arduino-uno-r4 led --blink --interval 250 -p COM5    # Fast blink (250ms)
-cc-led --board arduino-uno-r4 led --color red -p COM5               # Same as --on (color ignored)
-
-# Raspberry Pi Pico (Digital LED - GPIO pin 25)
-cc-led --board raspberry-pi-pico led --on -p COM6                     # Turn on builtin LED
-cc-led --board raspberry-pi-pico led --off -p COM6                    # Turn off builtin LED
-cc-led --board raspberry-pi-pico led --blink -p COM6                  # Blink (default 500ms)
-cc-led --board raspberry-pi-pico led --blink --interval 100 -p COM6   # Fast blink (100ms)
+# Examples on different ports (same commands work on all boards)
+cc-led led --on -p COM3                      # XIAO RP2040 on COM3
+cc-led led --blink -p COM5                   # Arduino Uno R4 on COM5
+cc-led led --color blue -p COM6              # Raspberry Pi Pico on COM6
+cc-led led --rainbow --interval 30 -p COM7   # Any board on COM7
 ```
 
 #### Port Configuration

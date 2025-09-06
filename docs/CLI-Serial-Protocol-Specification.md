@@ -31,9 +31,16 @@
 
 **💡 Common Patterns:**
 
-- `cc-led --port COM3 --color blue` → Blue LED
-- `cc-led --port COM3 --blink red --interval 1000` → Red blink every 1s
-- `cc-led --port COM3 --rainbow --interval 30` → Fast rainbow
+- `cc-led led --port COM3 --color blue` → Blue LED
+- `cc-led led --port COM3 --blink red --interval 1000` → Red blink every 1s
+- `cc-led led --port COM3 --rainbow --interval 30` → Fast rainbow
+
+**🔧 Board Transparency:**
+
+The LED control protocol is board-agnostic. All boards use the same command format:
+- **No `--board` option needed** for LED commands
+- **Automatic adaptation**: RGB boards display full colors, Digital LED boards convert to on/off
+- **Universal protocol**: Same commands work across XIAO RP2040, Arduino Uno R4, Raspberry Pi Pico
 
 ---
 
@@ -85,9 +92,9 @@ This specification defines how CLI options map to serial commands sent to Arduin
 **✨ Examples:**
 
 ```bash
-cc-led --port COM3 --color red        # → COLOR,255,0,0\n
-cc-led --port COM3 --color blue       # → COLOR,0,0,255\n  
-cc-led --port COM3 --color "100,150,200"  # → COLOR,100,150,200\n
+cc-led led --port COM3 --color red        # → COLOR,255,0,0\n
+cc-led led --port COM3 --color blue       # → COLOR,0,0,255\n  
+cc-led led --port COM3 --color "100,150,200"  # → COLOR,100,150,200\n
 ```
 
 ---
@@ -107,9 +114,9 @@ cc-led --port COM3 --color "100,150,200"  # → COLOR,100,150,200\n
 **Examples:**
 
 ```bash
-cc-led --port COM3 --blink                     # → BLINK1,255,255,255,500\n (white, 500ms)
-cc-led --port COM3 --blink red --interval 1000 # → BLINK1,255,0,0,1000\n
-cc-led --port COM3 --blink --color blue --interval 200  # → BLINK1,0,0,255,200\n
+cc-led led --port COM3 --blink                     # → BLINK1,255,255,255,500\n (white, 500ms)
+cc-led led --port COM3 --blink red --interval 1000 # → BLINK1,255,0,0,1000\n
+cc-led led --port COM3 --blink --color blue --interval 200  # → BLINK1,0,0,255,200\n
 ```
 
 #### Two Color Blink (BLINK2)
@@ -122,7 +129,7 @@ cc-led --port COM3 --blink --color blue --interval 200  # → BLINK1,0,0,255,200
 **Example:**
 
 ```bash
-cc-led --port COM3 --blink red --second-color blue --interval 750
+cc-led led --port COM3 --blink red --second-color blue --interval 750
 # → BLINK2,255,0,0,0,0,255,750\n
 ```
 
@@ -139,8 +146,8 @@ cc-led --port COM3 --blink red --second-color blue --interval 750
 **Examples:**
 
 ```bash
-cc-led --port COM3 --rainbow                 # → RAINBOW,50\n
-cc-led --port COM3 --rainbow --interval 100  # → RAINBOW,100\n
+cc-led led --port COM3 --rainbow                 # → RAINBOW,50\n
+cc-led led --port COM3 --rainbow --interval 100  # → RAINBOW,100\n
 ```
 
 ---
@@ -162,19 +169,19 @@ When multiple options are specified simultaneously, commands follow this priorit
 
 ```bash
 # Power control wins
-cc-led --port COM3 --on --color red --blink blue
+cc-led led --port COM3 --on --color red --blink blue
 # → ON\n (ON takes priority)
 
 # Blink beats static color  
-cc-led --port COM3 --color red --blink green
+cc-led led --port COM3 --color red --blink green
 # → BLINK1,0,255,0,500\n (blink takes priority)
 
 # ON beats OFF when both specified
-cc-led --port COM3 --on --off
+cc-led led --port COM3 --on --off
 # → ON\n (ON takes priority)
 
 # Rainbow beats static color
-cc-led --port COM3 --color purple --rainbow --interval 30
+cc-led led --port COM3 --color purple --rainbow --interval 30
 # → RAINBOW,30\n (rainbow takes priority)
 ```
 
@@ -192,13 +199,13 @@ cc-led --port COM3 --color purple --rainbow --interval 30
 
 ```bash
 # ✅ Valid boundaries
-cc-led --port COM3 --color "0,0,0"         # Minimum values
-cc-led --port COM3 --color "255,255,255"   # Maximum values
+cc-led led --port COM3 --color "0,0,0"         # Minimum values
+cc-led led --port COM3 --color "255,255,255"   # Maximum values
 
 # ❌ Invalid boundaries  
-cc-led --port COM3 --color "256,0,0"       # Over maximum
-cc-led --port COM3 --color "-1,0,0"        # Below minimum
-cc-led --port COM3 --color "1.5,0,0"       # Non-integer
+cc-led led --port COM3 --color "256,0,0"       # Over maximum
+cc-led led --port COM3 --color "-1,0,0"        # Below minimum
+cc-led led --port COM3 --color "1.5,0,0"       # Non-integer
 ```
 
 ### ⏱️ Interval Value Boundaries
@@ -211,12 +218,12 @@ cc-led --port COM3 --color "1.5,0,0"       # Non-integer
 
 ```bash
 # ✅ Valid intervals
-cc-led --port COM3 --blink --interval 1     # Minimum (very fast)
-cc-led --port COM3 --blink --interval 5000  # Large value (5 seconds)
+cc-led led --port COM3 --blink --interval 1     # Minimum (very fast)
+cc-led led --port COM3 --blink --interval 5000  # Large value (5 seconds)
 
 # ❌ Invalid intervals
-cc-led --port COM3 --blink --interval 0     # Zero not allowed
-cc-led --port COM3 --blink --interval -100  # Negative not allowed
+cc-led led --port COM3 --blink --interval 0     # Zero not allowed
+cc-led led --port COM3 --blink --interval -100  # Negative not allowed
 ```
 
 ### 🌈 Color Format Validation

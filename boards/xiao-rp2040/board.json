@@ -28,21 +28,14 @@
     }
   },
   "sketches": {
-    "NeoPixel_SerialControl": {
-      "path": "sketches/NeoPixel_SerialControl",
-      "description": "Full RGB LED control via serial commands"
+    "UniversalLedControl": {
+      "path": "sketches/UniversalLedControl",
+      "description": "LED control with common protocol (RGB WS2812)",
+      "default": true
     },
     "LEDBlink": {
       "path": "sketches/LEDBlink", 
       "description": "Basic LED blink for write/upload testing"
-    },
-    "UniversalLedControl": {
-      "path": "sketches/UniversalLedControl",
-      "description": "Universal LED control using common architecture (recommended)"
-    },
-    "SerialDebug": {
-      "path": "sketches/SerialDebug",
-      "description": "Debug sketch for testing serial communication"
     }
   },
   "notes": "Uses built-in WS2812 RGB LED. Requires power pin (11) to be HIGH."

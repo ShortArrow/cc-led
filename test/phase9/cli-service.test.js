@@ -318,17 +318,19 @@ test('E1-007: CLI parses install command for board dependencies', async () => {
   }));
 });
 
-test('E1-008: CLI defaults to xiao-rp2040 board when not specified', async () => {
+test('E1-008: CLI LED command works without --board (board transparency)', async () => {
   const dependencies = createMockDependencies();
   const options = createMockOptions();
   
+  // LED command without --board should work with universal protocol
   await executeCLICommand(['node', 'cli', 'led', '--port', 'COM3', '--color', 'red'], dependencies, options);
 
   expect(dependencies.controller.executeCommand).toHaveBeenCalledTimes(1);
   const callArgs = dependencies.controller.executeCommand.mock.calls[0][0];
   expect(callArgs.color).toBe('red');
-  // For LED command, board loading is handled by CLI service internally
-  // Default board behavior is confirmed through successful execution
+  expect(callArgs.port).toBe('COM3');
+  // Universal protocol: LED command doesn't require board specification
+  // Color adaptation is handled at microcontroller level
 });
 
 test('E1-009: CLI parses rainbow command with custom interval', async () => {

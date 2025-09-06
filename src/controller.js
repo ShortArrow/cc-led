@@ -22,8 +22,8 @@ export class LedController {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
-    this.board = options.board;
-    this.protocol = this.board ? this.board.getLedProtocol() : 'WS2812';
+    // Universal protocol - no board-specific protocol needed
+    this.protocol = 'Universal';
   }
 
   /**
@@ -201,8 +201,7 @@ export class LedController {
  */
 export async function executeCommand(options) {
   const controller = new LedController(options.port, {
-    board: options.board,
-    baudRate: options.board ? options.board.config.serial?.baudRate : 9600
+    baudRate: 9600  // Universal protocol uses standard 9600 baud rate
   });
   
   try {

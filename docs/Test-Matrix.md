@@ -461,12 +461,12 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 |---------|----------|-----------|----------------|-----------------|
 | **E1-001** | Argument Parsing | led --on with string interval "750" | Interval converted to number 750 | Type conversion |
 | **E1-002** | Complex Args | led --blink green --second-color blue --interval 250 | Multi-argument command parsing | Complex argument handling |
-| **E1-003** | Required Args | led command missing --port | Descriptive error message | Required argument validation |
+| **E1-003** | Required Args | led command missing --port | Descriptive error message | Port parameter validation |
 | **E1-004** | Global Options | Global --log-level debug forwarded to compile | Log level propagated to subcommands | Global option forwarding |
 | **E1-005** | Compile Command | compile SerialLedControl with board | Arduino compile with board config | Board-specific compilation |
 | **E1-006** | Upload Command | upload LEDBlink --port COM5 | Arduino deploy with port option | Upload parameter handling |
 | **E1-007** | Install Command | install command for board dependencies | Board-specific installation | Dependency management |
-| **E1-008** | Default Board | led command without --board | Defaults to xiao-rp2040 | Default value handling |
+| **E1-008** | Board Independence | led command works without --board | Universal protocol works across boards | Board transparency |
 | **E1-009** | Rainbow Command | led --rainbow --interval 100 | Rainbow with custom interval | Specialized command parsing |
 | **E1-010** | Multiple Flags | led --on --off --rainbow | Multiple boolean flags handled | Boolean flag parsing |
 
