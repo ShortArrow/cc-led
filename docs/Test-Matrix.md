@@ -1,7 +1,7 @@
 # CLI-Serial Protocol Test Matrix
 
 > **Complete test specification and validation matrix for cc-led protocol implementation**  
-> **Status: ✅ All 10 phases implemented (97 test cases) - Comprehensive coverage achieved**
+> **Total: 93 test cases across 10 phases**
 
 ## Table of Contents
 
@@ -66,18 +66,18 @@ These areas require real hardware or advanced testing infrastructure:
 
 ## Test Matrix Overview
 
-| Phase | Focus Area | Test Count | Priority | Implementation Status |
-|-------|------------|------------|----------|----------------------|
-| **Phase 1** | Basic Functions | 5 tests | 🔥 Critical | ✅ Complete |
-| **Phase 2** | Boundary Values | 14 tests | 🔥 High | ✅ Complete |
-| **Phase 3** | Priority & CLI Conflicts | 14 tests | 🟡 Medium | ✅ Complete |
-| **Phase 4** | Response Processing | 5 tests | 🔥 High | ✅ Complete |
-| **Phase 5** | Digital LED Protocol | 4 tests | 🟡 Medium | ✅ Complete |
-| **Phase 6** | Performance & Resources | 4 tests | 🟢 Low | ✅ Complete |
-| **Phase 7** | Arduino Integration | 12 tests | 🔥 High | ✅ Complete |
-| **Phase 8** | Config & Environment | 11 tests | 🟡 Medium | ✅ Complete |
-| **Phase 9** | End-to-End CLI | 4 tests | 🔥 High | ✅ Complete |
-| **Phase 10** | Arduino CLI Command Generation | 10 tests | 🔥 High | ✅ Complete |
+| Phase | Focus Area | Test Count | Priority |
+|-------|------------|------------|----------|
+| **Phase 1** | Basic Functions | 5 tests | 🔥 Critical |
+| **Phase 2** | Boundary Values | 14 tests | 🔥 High |
+| **Phase 3** | Priority & CLI Conflicts | 14 tests | 🟡 Medium |
+| **Phase 4** | Response Processing | 5 tests | 🔥 High |
+| **Phase 5** | Digital LED Protocol | 4 tests | 🟡 Medium |
+| **Phase 6** | Performance & Resources | 4 tests | 🟢 Low |
+| **Phase 7** | Arduino Integration | 12 tests | 🔥 High |
+| **Phase 8** | Config & Environment | 11 tests | 🟡 Medium |
+| **Phase 9** | End-to-End CLI | 10 tests | 🔥 High |
+| **Phase 10** | Arduino CLI Command Generation | 10 tests | 🔥 High |
 
 ---
 
@@ -459,10 +459,17 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 
 | Test ID | Category | Test Case | Expected Result | Validation Item |
 |---------|----------|-----------|----------------|-----------------|
-| **E1-001** | Argument Parsing | led --on with string interval | Interval converted to number | Type conversion |
-| **E1-002** | Complex Args | led --blink green --second-color blue | Complex command parsing | Multi-argument handling |
-| **E1-003** | Required Args | led command missing --port | Error message | Required argument validation |
-| **E1-004** | Global Forwarding | Global --log-level forwarded | Log level propagated | Global option forwarding |
+| **E1-001** | Argument Parsing | led --on with string interval "750" | Interval converted to number 750 | Type conversion |
+| **E1-002** | Complex Args | led --blink green --second-color blue --interval 250 | Multi-argument command parsing | Complex argument handling |
+| **E1-003** | Required Args | led command missing --port | Descriptive error message | Required argument validation |
+| **E1-004** | Global Options | Global --log-level debug forwarded to compile | Log level propagated to subcommands | Global option forwarding |
+| **E1-005** | Compile Command | compile SerialLedControl with board | Arduino compile with board config | Board-specific compilation |
+| **E1-006** | Upload Command | upload LEDBlink --port COM5 | Arduino deploy with port option | Upload parameter handling |
+| **E1-007** | Install Command | install command for board dependencies | Board-specific installation | Dependency management |
+| **E1-008** | Default Board | led command without --board | Defaults to xiao-rp2040 | Default value handling |
+| **E1-009** | Rainbow Command | led --rainbow --interval 100 | Rainbow with custom interval | Specialized command parsing |
+| **E1-010** | Multiple Flags | led --on --off --rainbow | Multiple boolean flags handled | Boolean flag parsing |
+
 
 ---
 

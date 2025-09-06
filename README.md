@@ -41,6 +41,9 @@ cc-led/                          # NPM package root
 | Seeed Studio XIAO RA4M1 | 📅 W.I.P. | RGB | xiao-ra4m1 | [Wiki](https://wiki.seeedstudio.com/getting_started_xiao_ra4m1/) |
 | Seeed Studio XIAO nRF52840 | 📅 W.I.P. | RGB | xiao-nrf52840 | [Wiki](https://wiki.seeedstudio.com/XIAO_BLE/) |
 | Seeed Studio XIAO nRF52840 Sense | 📅 W.I.P. | RGB | xiao-nrf52840-sense | [Wiki](https://wiki.seeedstudio.com/XIAO_BLE/) |
+| WaveShare RP2350-Matrix | 📅 W.I.P. | RGB | rp2350-matrix | |
+| WaveShare ESP32-H2-ZERO | 📅 W.I.P. | RGB | esp32-h2-zero | |
+| Pimoroni Tiny 2040 | 📅 W.I.P. | RGB | tiny-2040 | |
 
 ## Prerequisites
 
