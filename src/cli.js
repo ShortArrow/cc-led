@@ -82,7 +82,7 @@ program
       options.fqbn = board.fqbn;
       options.logLevel = options.logLevel || program.opts().logLevel;
       
-      await compile(sketch, options);
+      await compile(sketch, options.board, options.logLevel);
       console.log(chalk.green('✓ Compilation successful'));
     } catch (error) {
       console.error(chalk.red(`✗ ${error.message}`));
@@ -113,7 +113,7 @@ program
       options.fqbn = board.fqbn;
       options.logLevel = options.logLevel || program.opts().logLevel;
       
-      await deploy(sketch, options);
+      await deploy(sketch, options.board, options);
       console.log(chalk.green('✓ Upload successful'));
     } catch (error) {
       console.error(chalk.red(`✗ ${error.message}`));

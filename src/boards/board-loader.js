@@ -64,9 +64,21 @@ export class BoardLoader {
       throw new Error(`Board '${boardId}' support is planned but not yet implemented`);
     }
     
+    // Create enhanced config with absolute sketch paths
+    const enhancedConfig = { ...config };
+    if (enhancedConfig.sketches) {
+      const boardDir = join(this.boardsDir, boardId);
+      for (const [sketchName, sketchInfo] of Object.entries(enhancedConfig.sketches)) {
+        enhancedConfig.sketches[sketchName] = {
+          ...sketchInfo,
+          path: join(boardDir, sketchInfo.path)
+        };
+      }
+    }
+    
     // In the future, we can load board-specific classes here
     // For now, use the base board class
-    return new BaseBoard(config);
+    return new BaseBoard(enhancedConfig);
   }
 
   /**

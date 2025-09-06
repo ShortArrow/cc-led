@@ -126,7 +126,15 @@ board_manager:
    * @returns {Promise<string>} Compilation output
    */
   async compile(sketchName, board, logLevel = 'info') {
-    const sketchPath = join(this.packageRoot, 'sketches', sketchName);
+    let sketchPath;
+    
+    // Use board-specific sketch path if board object is provided
+    if (board && typeof board.getSketchPath === 'function') {
+      sketchPath = board.getSketchPath(sketchName);
+    } else {
+      // Fallback to legacy path structure
+      sketchPath = join(this.packageRoot, 'sketches', sketchName);
+    }
     
     // Validate sketch directory exists
     if (!this.fileSystem.existsSync(sketchPath)) {
@@ -145,7 +153,16 @@ board_manager:
    * @returns {Promise<string>} Upload output
    */
   async deploy(sketchName, board, options = {}) {
-    const sketchPath = join(this.packageRoot, 'sketches', sketchName);
+    let sketchPath;
+    
+    // Use board-specific sketch path if board object is provided
+    if (board && typeof board.getSketchPath === 'function') {
+      sketchPath = board.getSketchPath(sketchName);
+    } else {
+      // Fallback to legacy path structure
+      sketchPath = join(this.packageRoot, 'sketches', sketchName);
+    }
+    
     const port = options.port || getSerialPort();
     const logLevel = options.logLevel || 'info';
     
