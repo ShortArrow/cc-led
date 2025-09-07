@@ -188,7 +188,7 @@ board_manager:
     // Install libraries if specified
     if (board.libraries && Array.isArray(board.libraries)) {
       for (const library of board.libraries) {
-        const libArgs = ['lib', 'install', `${library.name}@${library.version || 'latest'}`];
+        const libArgs = ['lib', 'install', `"${library.name}"@${library.version || 'latest'}`];
         await this.execute(libArgs, logLevel);
       }
     }

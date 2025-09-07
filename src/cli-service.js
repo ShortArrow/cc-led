@@ -270,7 +270,7 @@ export class CLIService {
       options.board = board;
       options.logLevel = options.logLevel || this.program.opts().logLevel;
       
-      await this.arduino.install(options);
+      await this.arduino.install(board, options);
       this.consoleHandler.log(chalk.green(`✓ Installation complete for ${board.name}`));
     } catch (error) {
       this.consoleHandler.error(chalk.red(`✗ ${error.message}`));

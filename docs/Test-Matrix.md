@@ -1,7 +1,7 @@
 # CLI-Serial Protocol Test Matrix
 
 > **Complete test specification and validation matrix for cc-led protocol implementation**  
-> **Total: 93 test cases across 10 phases**
+> **Total: 110 test cases across 11 phases**
 
 ## Table of Contents
 
@@ -18,7 +18,8 @@
 11. [Phase 8: Config & Environment Tests](#phase-8-config--environment-tests)
 12. [Phase 9: End-to-End CLI Tests](#phase-9-end-to-end-cli-tests)
 13. [Phase 10: Arduino CLI Command Generation Tests](#phase-10-arduino-cli-command-generation-tests)
-14. [Related Documentation](#related-documentation)
+14. [Phase 11: Arduino Command Processing Tests](#phase-11-arduino-command-processing-tests)
+15. [Related Documentation](#related-documentation)
 
 ---
 
@@ -42,6 +43,7 @@ The current test suite provides comprehensive coverage for:
 - ✅ **Configuration Management**: Environment variables and .env file priority
 - ✅ **End-to-End CLI**: Argument parsing and command flow validation
 - ✅ **Command Generation**: Full Arduino CLI command transformation
+- ✅ **Arduino Command Processing**: Microcontroller-side parsing and response generation
 ```
 
 ### 🔄 **Advanced Validation Areas** (Future Implementation)
@@ -78,6 +80,7 @@ These areas require real hardware or advanced testing infrastructure:
 | **Phase 8** | Config & Environment | 11 tests | 🟡 Medium |
 | **Phase 9** | End-to-End CLI | 10 tests | 🔥 High |
 | **Phase 10** | Arduino CLI Command Generation | 10 tests | 🔥 High |
+| **Phase 11** | Arduino Command Processing | 17 tests | 🔥 Critical |
 
 ---
 
@@ -505,6 +508,36 @@ test('A2-007: Sketch path resolution finds correct .ino file', () => {});
 - Sketch path resolution from name to actual .ino file location
 - Board-specific installation commands (platform + libraries)
 - Command parameter consistency across workflow sequences
+
+---
+
+## Phase 11: Arduino Command Processing Tests
+**Priority: Critical** - Microcontroller command processing and response generation validation  
+**Test Framework: Unity (ThrowTheSwitch/Unity)** for C/C++ unit testing
+
+| Test ID | Category | Input Command | Expected Response | Validation Item |
+|---------|----------|---------------|-------------------|-----------------|
+| **U1-001** | Basic Commands | `"ON"` | `"ACCEPTED,ON"` | Basic ON command processing |
+| **U1-002** | Basic Commands | `"OFF"` | `"ACCEPTED,OFF"` | Basic OFF command processing |
+| **U1-003** | Color Commands | `"COLOR,255,0,0"` | `"ACCEPTED,COLOR,255,0,0"` | Valid RGB color processing |
+| **U1-004** | Color Validation | `"COLOR,256,0,0"` | `"REJECT,COLOR,256,0,0,invalid format"` | R channel boundary violation |
+| **U1-005** | Color Validation | `"COLOR,255,256,0"` | `"REJECT,COLOR,255,256,0,invalid format"` | G channel boundary violation |
+| **U1-006** | Color Validation | `"COLOR,255,0,256"` | `"REJECT,COLOR,255,0,256,invalid format"` | B channel boundary violation |
+| **U1-007** | Color Validation | `"COLOR,-1,0,0"` | `"REJECT,COLOR,-1,0,0,invalid format"` | Negative R channel |
+| **U1-008** | Color Validation | `"COLOR,255,0"` | `"REJECT,COLOR,255,0,invalid format"` | Missing B channel |
+| **U1-009** | Color Validation | `"COLOR,255,0,0,extra"` | `"REJECT,COLOR,255,0,0,extra,invalid format"` | Extra parameters |
+| **U1-010** | Blink Commands | `"BLINK1,255,255,255,500"` | `"ACCEPTED,BLINK1,255,255,255,interval=500"` | Valid single-color blink |
+| **U1-011** | Blink Commands | `"BLINK2,255,0,0,0,0,255,300"` | `"ACCEPTED,BLINK2,255,0,0,0,0,255,interval=300"` | Valid two-color blink |
+| **U1-012** | Interval Validation | `"BLINK1,255,255,255,0"` | `"REJECT,BLINK1,255,255,255,0,invalid parameters"` | Zero interval rejection |
+| **U1-013** | Interval Validation | `"BLINK1,255,255,255,-100"` | `"REJECT,BLINK1,255,255,255,-100,invalid parameters"` | Negative interval |
+| **U1-014** | Rainbow Commands | `"RAINBOW,50"` | `"ACCEPTED,RAINBOW,interval=50"` | Valid rainbow command |
+| **U1-015** | Rainbow Validation | `"RAINBOW,0"` | `"REJECT,RAINBOW,0,invalid interval"` | Zero interval rainbow |
+| **U1-016** | Unknown Commands | `"INVALID_CMD"` | `"REJECT,INVALID_CMD,unknown command"` | Unknown command handling |
+| **U1-017** | Empty Commands | `""` | `"REJECT,,unknown command"` | Empty string handling |
+
+**Test Framework:** Unity (ThrowTheSwitch/Unity) for C/C++ microcontroller testing.
+**Implementation:** Arduino-independent command processor with response generation.
+**Execution:** See [CI-CD Test Strategy](CI-CD-Test-Strategy.md) for test execution methods.
 
 ---
 
