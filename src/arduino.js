@@ -47,33 +47,45 @@ export class ArduinoService {
    * @returns {string} Path to config file to use
    */
   resolveConfigFile(cliConfigFile) {
+    const workingDirectory = process.cwd();
+    
     // Priority 1: CLI parameter (--config-file <path>)
     if (cliConfigFile) {
-      if (!this.fileSystem.existsSync(cliConfigFile)) {
-        throw new Error(`Config file not found: ${cliConfigFile}`);
-      }
-      return cliConfigFile;
+      return this._validateCliConfigFile(cliConfigFile);
     }
     
     // Priority 2: Current directory (./arduino-cli.yaml)
-    const cwd = process.cwd();
-    const currentDirConfig = join(cwd, 'arduino-cli.yaml');
+    const currentDirConfig = join(workingDirectory, 'arduino-cli.yaml');
     if (this.fileSystem.existsSync(currentDirConfig)) {
       return currentDirConfig;
     }
     
     // Priority 3: Create default config in current directory
-    return this.createLocalConfig();
+    return this.createLocalConfig(workingDirectory);
+  }
+
+  /**
+   * Validate CLI-specified config file existence
+   * @param {string} cliConfigFile - Config file path from CLI parameter
+   * @returns {string} Validated config file path
+   * @throws {Error} If config file does not exist
+   * @private
+   */
+  _validateCliConfigFile(cliConfigFile) {
+    if (!this.fileSystem.existsSync(cliConfigFile)) {
+      throw new Error(`Arduino CLI config file not found: ${cliConfigFile}`);
+    }
+    return cliConfigFile;
   }
 
   /**
    * Create local arduino-cli.yaml in current directory
+   * @param {string} [workingDirectory] - Working directory (defaults to process.cwd())
    * @returns {string} Path to created config file
    */
-  createLocalConfig() {
-    const cwd = process.cwd();
-    const configPath = join(cwd, 'arduino-cli.yaml');
-    const arduinoDir = join(cwd, '.arduino');
+  createLocalConfig(workingDirectory = process.cwd()) {
+    const configPath = join(workingDirectory, 'arduino-cli.yaml');
+    const arduinoDir = join(workingDirectory, '.arduino');
     
     // Create .arduino directory if it doesn't exist
     if (!this.fileSystem.existsSync(arduinoDir)) {
@@ -87,7 +99,21 @@ export class ArduinoService {
     }
     
     // Create arduino-cli.yaml config file
-    const configContent = `directories:
+    const configContent = this._generateDefaultConfigContent();
+    
+    // Write config file if it doesn't exist or update if needed
+    this.fileSystem.writeFileSync(configPath, configContent, 'utf-8');
+    
+    return configPath;
+  }
+
+  /**
+   * Generate default arduino-cli.yaml configuration content
+   * @returns {string} Configuration file content in YAML format
+   * @private
+   */
+  _generateDefaultConfigContent() {
+    return `directories:
   data: ./.arduino/data
   downloads: ./.arduino/data/downloads
   user: ./.arduino/data
@@ -96,11 +122,6 @@ board_manager:
     - https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
     - https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json
 `;
-    
-    // Write config file if it doesn't exist or update if needed
-    this.fileSystem.writeFileSync(configPath, configContent, 'utf-8');
-    
-    return configPath;
   }
 
   /**
@@ -205,12 +226,17 @@ board_manager:
 
   /**
    * Install board dependencies
-   * @param {object} board - Board configuration
-   * @param {object} options - Install options
+   * @param {object} options - Install options containing board and logLevel
+   * @param {object} options.board - Board configuration
+   * @param {string} [options.logLevel='info'] - Log level for Arduino CLI
    * @returns {Promise<string>} Install output
    */
-  async install(board, options = {}) {
-    const logLevel = options.logLevel || 'info';
+  async install(options = {}) {
+    const { board, logLevel = 'info' } = options;
+    
+    if (!board) {
+      throw new Error('Board configuration is required');
+    }
     
     // Install core if specified
     if (board.platform && board.platform.package) {
