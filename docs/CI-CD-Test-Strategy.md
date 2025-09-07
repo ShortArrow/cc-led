@@ -20,11 +20,24 @@ npm run test:fast    # Quick run with basic reporter
 npm run test:phase9  # Phase 9 tests only
 ```
 
+### Unity Tests (Phase 11)
+```bash
+# Arduino Command Processing Tests (C/C++ Unity framework)
+
+# Option 1: Native testing (gcc/g++ only, no PlatformIO required)
+cd boards/common/test
+make clean && make test
+
+# Option 2: PlatformIO testing (requires: pip install platformio)
+platformio test -e native       # Host machine testing
+platformio test -e arduino_uno_r4  # Hardware testing (Arduino connected)
+```
+
 ## Performance Metrics
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Total Tests** | 93 | All stable phases |
+| **Total Tests** | 110 | All stable phases (93 Node.js + 17 Unity) |
 | **Execution Time** | ~1.3s | Full suite |
 | **Parallel Safe** | ✅ Yes | Dependency injection |
 | **Coverage** | 100% | Critical paths |

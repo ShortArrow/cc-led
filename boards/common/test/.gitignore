@@ -1,0 +1,13 @@
+# Unity Test Framework
+Unity/
+
+# Build artifacts
+*.o
+*.exe
+test_command_processor
+test_command_processor.exe
+
+# Temporary files
+*.tmp
+*.bak
+*~
