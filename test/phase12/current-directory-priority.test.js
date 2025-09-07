@@ -30,7 +30,11 @@ it('C2-003: should use ./arduino-cli.yaml when present and no CLI parameter', as
   
   const configFileIndex = lastCommand.args.indexOf('--config-file');
   expect(configFileIndex).toBeGreaterThan(-1);
-  expect(lastCommand.args[configFileIndex + 1]).toBe(join(process.cwd(), 'arduino-cli.yaml'));
+  
+  // Normalize paths for cross-platform compatibility
+  const actualPath = lastCommand.args[configFileIndex + 1].replace(/\\/g, '/');
+  const expectedPath = join('/test/working/directory', 'arduino-cli.yaml').replace(/\\/g, '/');
+  expect(actualPath).toBe(expectedPath);
   
   vi.restoreAllMocks();
   process.cwd = originalCwd;
