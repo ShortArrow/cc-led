@@ -30,12 +30,40 @@ export class ArduinoService {
     
     const config = loadConfig();
     this.fqbn = options.fqbn || config.fqbn;
-    // Create local arduino-cli.yaml in current directory
-    this.configFile = this.createLocalConfig();
+    
+    // Determine config file path based on priority system
+    this.configFile = this.resolveConfigFile(options.configFile);
+    
     // Use package installation directory for board files and sketches
     this.packageRoot = join(__dirname, '..');
     // Current working directory for .arduino and config files
     this.workingDir = process.cwd();
+  }
+
+  /**
+   * Resolve arduino-cli.yaml config file path based on priority system
+   * Priority: 1. CLI parameter, 2. Current directory, 3. Create in current directory
+   * @param {string} [cliConfigFile] - Config file specified via CLI parameter
+   * @returns {string} Path to config file to use
+   */
+  resolveConfigFile(cliConfigFile) {
+    // Priority 1: CLI parameter (--config-file <path>)
+    if (cliConfigFile) {
+      if (!this.fileSystem.existsSync(cliConfigFile)) {
+        throw new Error(`Config file not found: ${cliConfigFile}`);
+      }
+      return cliConfigFile;
+    }
+    
+    // Priority 2: Current directory (./arduino-cli.yaml)
+    const cwd = process.cwd();
+    const currentDirConfig = join(cwd, 'arduino-cli.yaml');
+    if (this.fileSystem.existsSync(currentDirConfig)) {
+      return currentDirConfig;
+    }
+    
+    // Priority 3: Create default config in current directory
+    return this.createLocalConfig();
   }
 
   /**
@@ -82,6 +110,11 @@ board_manager:
    * @returns {Promise<string>} Command output
    */
   async execute(args, logLevel = 'info') {
+    // Log config file selection for debugging
+    if (logLevel === 'debug') {
+      console.log(`Using arduino-cli config file: ${this.configFile}`);
+    }
+    
     return new Promise((resolve, reject) => {
       const fullArgs = ['--log', '--log-level', logLevel, '--config-file', this.configFile, ...args];
       const proc = this.processExecutor.spawn('arduino-cli', fullArgs, {

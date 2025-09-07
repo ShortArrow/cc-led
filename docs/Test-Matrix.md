@@ -1,7 +1,7 @@
 # CLI-Serial Protocol Test Matrix
 
 > **Complete test specification and validation matrix for cc-led protocol implementation**  
-> **Total: 110 test cases across 11 phases**
+> **Total: 121 test cases across 12 phases**
 
 ## Table of Contents
 
@@ -19,7 +19,8 @@
 12. [Phase 9: End-to-End CLI Tests](#phase-9-end-to-end-cli-tests)
 13. [Phase 10: Arduino CLI Command Generation Tests](#phase-10-arduino-cli-command-generation-tests)
 14. [Phase 11: Arduino Command Processing Tests](#phase-11-arduino-command-processing-tests)
-15. [Related Documentation](#related-documentation)
+15. [Phase 12: Arduino CLI Configuration Priority Tests](#phase-12-arduino-cli-configuration-priority-tests)
+16. [Related Documentation](#related-documentation)
 
 ---
 
@@ -505,6 +506,60 @@ test('A2-007: Sketch path resolution finds correct .ino file', () => {});
 - Log level propagation from cc-led to arduino-cli commands
 - Build directory path generation using working directory isolation
 - Config file parameter injection for all arduino-cli commands
+
+---
+
+## Phase 12: Arduino CLI Configuration Priority Tests
+
+**Priority: High** - Configuration file location and priority system validation
+
+| Test ID | Category | Test Case | Expected Result | Validation Item |
+|---------|----------|-----------|----------------|-----------------|
+| **C2-001** | CLI Parameter | `--config-file /custom/path/config.yaml install` | Uses specified config file | Highest priority: CLI parameter |
+| **C2-002** | CLI Parameter | `--config-file missing.yaml install` | Error with file not found | CLI parameter validation |
+| **C2-003** | Current Directory | `install` with `./arduino-cli.yaml` present | Uses current directory config | Priority 2: Current directory |
+| **C2-004** | Current Directory | `install` with malformed `./arduino-cli.yaml` | Error with config parse failure | Current directory config validation |
+| **C2-005** | Package Directory | `install` without CLI arg or current dir config | Creates config in current directory | Priority 3: Package directory fallback |
+| **C2-006** | Priority Order | CLI param + current dir + package configs exist | CLI parameter takes precedence | Priority hierarchy enforcement |
+| **C2-007** | Config Creation | `install` in empty directory | `arduino-cli.yaml` created in working directory | Auto-generation in current directory |
+| **C2-008** | Config Content | Generated config file content | Contains board manager URLs and directories | Default config content validation |
+| **C2-009** | Multiple Commands | Config priority consistent across commands | Same config used for install, compile, upload | Consistency across command types |
+| **C2-010** | Working Directory | Different working directories | Independent config per directory | Directory isolation |
+| **C2-011** | Logging | Config file selection logged | Debug info shows selected config path | Configuration transparency |
+
+**Test ID Examples:**
+```javascript
+test('C2-001: --config-file parameter overrides all other config sources', async () => {
+  // Setup custom config file
+  // Run command with --config-file parameter
+  // Verify specified config file was used
+});
+
+test('C2-003: ./arduino-cli.yaml in current directory used when no CLI param', async () => {
+  // Create arduino-cli.yaml in current directory
+  // Run command without --config-file
+  // Verify current directory config was used
+});
+
+test('C2-007: Config file auto-created in current directory when missing', async () => {
+  // Ensure no config files exist
+  // Run install command
+  // Verify arduino-cli.yaml created in current directory
+});
+```
+
+**Implementation Priority:**
+- 🔥 **High**: C2-001, C2-003, C2-005, C2-007 (core priority logic)
+- 🟡 **Medium**: C2-002, C2-004, C2-009, C2-011 (validation and logging)
+- 🟢 **Low**: C2-006, C2-008, C2-010 (edge cases and content validation)
+
+**Configuration Priority System Requirements:**
+1. **CLI Parameter** (`--config-file <path>`): Explicit user specification, highest priority
+2. **Current Directory** (`./arduino-cli.yaml`): Project-specific configuration 
+3. **Package Directory**: Auto-generated default configuration as fallback
+4. **Error Handling**: Clear error messages for missing or invalid config files
+5. **Logging**: Debug-level logging of config file selection process
+6. **Auto-Generation**: Default config created in current directory when no config found
 - Sketch path resolution from name to actual .ino file location
 - Board-specific installation commands (platform + libraries)
 - Command parameter consistency across workflow sequences

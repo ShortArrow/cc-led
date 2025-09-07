@@ -220,30 +220,74 @@ ls /dev/tty*  # Look for /dev/ttyACM0 or similar
 
 ## 🔧 How It Works
 
+### Universal LED Control Protocol
+
+cc-led implements a **universal protocol** that works across all supported boards through a unified command processing system:
+
+1. **Arduino-Independent Command Processing**
+   - Pure C implementation in `boards/common/src/CommandProcessor.h/c`
+   - Shared parsing logic across all board types
+   - Comprehensive unit testing with Unity framework (17 test cases)
+
+2. **Board-Agnostic CLI Commands**
+   ```bash
+   # Same commands work on all boards
+   cc-led led --color red -p COM3      # RGB boards show red, Digital LEDs turn on
+   cc-led led --blink -p COM3          # All boards blink
+   cc-led led --rainbow -p COM3        # RGB boards show rainbow, Digital LEDs blink
+   ```
+
+3. **Clean Architecture with Dependency Injection**
+   - Interface-based testing with mock adapters
+   - No test interference between different phases
+   - 110+ test cases with full coverage
+
+### Arduino CLI Configuration Priority System
+
+cc-led now supports flexible configuration file management:
+
+**Priority Order** (highest to lowest):
+1. **CLI Parameter**: `--config-file <path>` (explicit user specification)
+2. **Current Directory**: `./arduino-cli.yaml` (project-specific configuration)  
+3. **Auto-Generated**: Default configuration created in current directory
+
+```bash
+# Explicit config file
+cc-led --config-file /custom/config.yaml install
+
+# Uses ./arduino-cli.yaml if present
+cc-led install  # Searches current directory first
+
+# Auto-creates arduino-cli.yaml if none found
+cc-led install  # Creates default config in current directory
+```
+
 ### Directory Management
 
 1. **Arduino CLI Configuration (`arduino-cli.yaml`)**
    - Configures Arduino CLI to use `./.arduino/` for all installations
    - Keeps Arduino libraries separate from Node.js dependencies
    - Board packages install to `.arduino/data/packages/`
+   - **NEW**: Automatic configuration file resolution with priority system
 
-2. **Node.js Package (`tool/cc-led/xiao-rp2040/`)**
+2. **Node.js Package**
    - Self-contained Node.js CLI tool
    - `node_modules/` stays local to the package
    - Can be published to npm or used with `npx`
 
 3. **Arduino Sketches**
    - Each sketch in its own directory at project root
-   - Compiled binaries go to `<sketch>/build/`
+   - Compiled binaries go to `<sketch>/.build/`
    - Source remains separate from tools
+   - **NEW**: Universal LED control sketch works on all boards
 
 ### Working Directory Behavior
 
 When you run `cc-led` from any directory, it creates:
 
 - **`.arduino/`**: Arduino environment (boards, libraries, tools) in current working directory
-- **`arduino-cli.yaml`**: Configuration file in current working directory  
-- **`build/`**: Compilation output in the sketch directory (inside package)
+- **`arduino-cli.yaml`**: Configuration file in current working directory with automatic priority resolution
+- **`.build/`**: Compilation output in the sketch directory (inside package)
 
 This design allows each project to have its own isolated Arduino environment, similar to Python's `.venv`.
 
