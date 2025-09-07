@@ -22,8 +22,8 @@ export class LedController {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
-    // Universal protocol - no board-specific protocol needed
-    this.protocol = 'Universal';
+    // Protocol detection: check board option, fallback to Universal
+    this.protocol = options.board?.getLedProtocol ? options.board.getLedProtocol() : 'Universal';
   }
 
   /**

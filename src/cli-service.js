@@ -267,10 +267,15 @@ export class CLIService {
       const boardId = this.program.opts().board;
       const board = this.boardLoader.loadBoard(boardId);
       
-      options.board = board;
-      options.logLevel = options.logLevel || this.program.opts().logLevel;
+      // Create install options with board included
+      const installOptions = {
+        ...options,
+        board: board,
+        logLevel: options.logLevel || this.program.opts().logLevel
+      };
       
-      await this.arduino.install(board, options);
+      // Call install with options object containing board
+      await this.arduino.install(installOptions);
       this.consoleHandler.log(chalk.green(`✓ Installation complete for ${board.name}`));
     } catch (error) {
       this.consoleHandler.error(chalk.red(`✗ ${error.message}`));

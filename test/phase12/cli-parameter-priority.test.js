@@ -59,7 +59,7 @@ it('C2-002: should throw error when specified config file does not exist', () =>
       mockProcessExecutor, 
       { configFile: missingConfigPath }
     );
-  }).toThrow('Config file not found');
+  }).toThrow('Arduino CLI config file not found');
   
   vi.restoreAllMocks();
   process.cwd = originalCwd;
