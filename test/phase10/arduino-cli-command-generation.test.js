@@ -30,7 +30,7 @@ vi.mock('../../src/boards/board-loader.js', () => ({
           fqbn: 'rp2040:rp2040:seeed_xiao_rp2040',
           platform: { package: 'rp2040:rp2040', version: '3.6.0' },
           libraries: [{ name: 'Adafruit NeoPixel', version: '1.15.1' }],
-          getSketchPath: (name) => `/package/boards/xiao-rp2040/sketches/${name}/${name}.ino`
+          getSketchPath: (name) => `/package/sketches/xiao-rp2040/${name}/${name}.ino`
         },
         'arduino-uno-r4': {
           id: 'arduino-uno-r4',
@@ -38,7 +38,7 @@ vi.mock('../../src/boards/board-loader.js', () => ({
           fqbn: 'arduino:renesas_uno:minima',
           platform: { package: 'arduino:renesas_uno', version: '1.1.0' },
           libraries: [],
-          getSketchPath: (name) => `/package/boards/arduino-uno-r4/sketches/${name}/${name}.ino`
+          getSketchPath: (name) => `/package/sketches/arduino-uno-r4/${name}/${name}.ino`
         }
       };
       return boards[id] || null;
@@ -186,7 +186,7 @@ test('A2-007: Sketch path resolution finds correct .ino file', async () => {
   
   expect(sketchName).toBe('NeoPixel_SerialControl');
   expect(boardObj.getSketchPath('NeoPixel_SerialControl'))
-    .toBe('/package/boards/xiao-rp2040/sketches/NeoPixel_SerialControl/NeoPixel_SerialControl.ino');
+    .toBe('/package/sketches/xiao-rp2040/NeoPixel_SerialControl/NeoPixel_SerialControl.ino');
 });
 
 test('A2-008: Different board FQBN mapping for Arduino Uno R4', async () => {

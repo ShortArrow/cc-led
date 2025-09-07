@@ -105,16 +105,23 @@ beforeEach(() => {
   // Mock process.cwd() to return a consistent working directory
   originalCwd = process.cwd;
   vi.spyOn(process, 'cwd').mockReturnValue('/test/working/directory');
-  
-  arduinoService = new ArduinoService(mockFileSystem, mockProcessExecutor);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   process.cwd = originalCwd;
+  
+  // Clear mocks to ensure test isolation
+  if (mockFileSystem) mockFileSystem.clear();
+  if (mockProcessExecutor) mockProcessExecutor.clear();
 });
 
 it('C2-009: should use same config file across install, compile, and upload commands', async () => {
+  // Create a fresh service instance for this test only
+  const freshMockFileSystem = new MockFileSystemAdapter();
+  const freshMockProcessExecutor = new MockProcessExecutorAdapter();
+  const freshArduinoService = new ArduinoService(freshMockFileSystem, freshMockProcessExecutor);
+  
   const board = { 
     fqbn: 'test:board:config', 
     platform: { package: 'test:platform' },
@@ -122,12 +129,12 @@ it('C2-009: should use same config file across install, compile, and upload comm
   };
   
   // Mock sketch directory existence
-  mockFileSystem.addDirectory('/test/sketches/TestSketch');
+  freshMockFileSystem.addDirectory('/test/sketches/TestSketch');
   
-  await arduinoService.install(board);
-  await arduinoService.compile('TestSketch', board);
+  await freshArduinoService.install({ board });
+  await freshArduinoService.compile('TestSketch', board);
   
-  const commands = mockProcessExecutor.executedCommands;
+  const commands = freshMockProcessExecutor.executedCommands;
   const configPaths = commands
     .map(cmd => {
       const configIndex = cmd.args.indexOf('--config-file');
@@ -138,14 +145,17 @@ it('C2-009: should use same config file across install, compile, and upload comm
   // All commands should use the same config file
   expect(configPaths.length).toBeGreaterThan(0);
   
-  // Debug: log the actual config paths found
-  console.log('Config paths found:', configPaths);
-  
-  // Since the service creates the same config for all commands
-  const expectedConfigPath = join(process.cwd(), 'arduino-cli.yaml');
+  // Verify all config paths are identical (same service instance = same config)
+  const firstConfigPath = configPaths[0];
   configPaths.forEach(path => {
-    expect(path).toBe(expectedConfigPath);
+    expect(path).toBe(firstConfigPath);
   });
+  
+  // Verify it uses current directory config as expected
+  const expectedConfigPath = join('/test/working/directory', 'arduino-cli.yaml');
+  const normalizedExpected = expectedConfigPath.replace(/\\/g, '/');
+  const normalizedActual = firstConfigPath.replace(/\\/g, '/');
+  expect(normalizedActual).toBe(normalizedExpected);
 });
 
 it('C2-010: should create independent configs for different working directories', async () => {

@@ -23,12 +23,12 @@
   },
   "sketches": {
     "UniversalLedControl": {
-      "path": "sketches/UniversalLedControl",
+      "path": "UniversalLedControl",
       "description": "LED control with common protocol (GPIO pin 25)",
       "default": true
     },
     "LEDBlink": {
-      "path": "sketches/LEDBlink",
+      "path": "LEDBlink",
       "description": "Basic LED blink for write/upload testing (GPIO pin 25)"
     }
   },

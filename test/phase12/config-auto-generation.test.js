@@ -145,9 +145,11 @@ it('C2-008: should generate config with required board manager URLs and director
   // Clear file system and create fresh service
   mockFileSystem.clear();
   const arduinoService = new ArduinoService(mockFileSystem, mockProcessExecutor);
-  await arduinoService.execute(['core', 'list']);
   
+  // Service creates config during construction, verify it exists
   const configPath = join(process.cwd(), 'arduino-cli.yaml');
+  expect(mockFileSystem.existsSync(configPath)).toBe(true);
+  
   const configContent = mockFileSystem.readFileSync(configPath, 'utf-8');
   
   // Verify essential config sections

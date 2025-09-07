@@ -67,12 +67,12 @@ npm unlink --global
 
 ```bash
 # Create board directory (use lowercase with hyphens)
-mkdir -p boards/your-board-name/sketches
+mkdir -p sketches/your-board-name/sketches
 ```
 
 ### Step 2: Create Board Configuration
 
-Create `boards/your-board-name/board.json`:
+Create `sketches/your-board-name/board.json`:
 
 ```json
 {
@@ -174,15 +174,15 @@ void loop() {
 
 ```bash
 # Create sketch in appropriate board directory
-mkdir boards/your-board-name/sketches/YourSketchName
+mkdir sketches/your-board-name/sketches/YourSketchName
 ```
 
 ### Step 2: Write Arduino Sketch
 
-Create `boards/your-board-name/sketches/YourSketchName/YourSketchName.ino`:
+Create `sketches/your-board-name/sketches/YourSketchName/YourSketchName.ino`:
 
 ```cpp
-// Example: boards/xiao-rp2040/sketches/MyLEDPattern/MyLEDPattern.ino
+// Example: sketches/xiao-rp2040/sketches/MyLEDPattern/MyLEDPattern.ino
 
 #include <Adafruit_NeoPixel.h>
 
@@ -354,7 +354,7 @@ arduino-cli lib install "<library name>"
 
 ### PR Checklist
 
-- [ ] New board directory created in `boards/`
+- [ ] New board directory created in `sketches/`
 - [ ] Valid `board.json` with all required fields
 - [ ] At least one working sketch included
 - [ ] Board added to README.md support table

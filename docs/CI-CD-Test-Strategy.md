@@ -27,7 +27,7 @@ npm test -- phase12  # Phase 12 configuration priority tests only
 # Arduino Command Processing Tests (C/C++ Unity framework)
 
 # Option 1: Native testing (gcc/g++ only, no PlatformIO required)
-cd boards/common/test
+cd sketches/common/test
 make clean && make test
 
 # Option 2: PlatformIO testing (requires: pip install platformio)

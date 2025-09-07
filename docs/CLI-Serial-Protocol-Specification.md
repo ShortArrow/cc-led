@@ -11,7 +11,7 @@
 5. [🔄 Command Priority Logic](#-command-priority-logic)
 6. [✅ Input Validation](#-input-validation)
 7. [📡 Response Processing](#-response-processing)
-8. [💡 Digital LED Protocol](#-digital-led-protocol)
+8. [🔄 Universal Protocol](#-universal-protocol)
 9. [❌ Error Handling](#-error-handling)
 10. [⚡ Performance](#-performance)
 11. [🔧 Integration Examples](#-integration-examples)
@@ -39,8 +39,8 @@
 
 The LED control protocol is board-agnostic. All boards use the same command format:
 - **No `--board` option needed** for LED commands
-- **Automatic adaptation**: RGB boards display full colors, Digital LED boards convert to on/off
-- **Universal protocol**: Same commands work across XIAO RP2040, Arduino Uno R4, Raspberry Pi Pico
+- **Universal protocol**: Board firmware adapts commands to available LED capabilities
+- **Same commands**: Work across XIAO RP2040, Arduino Uno R4, Raspberry Pi Pico
 
 ---
 
@@ -380,43 +380,38 @@ No response received from device (timeout)
 
 ---
 
-## 💡 Digital LED Protocol
+## 🔄 Universal Protocol
 
-### 🔍 Board Detection
+### 🎯 Automatic Board Adaptation
 
-Digital LED boards (like Arduino Uno R4) are automatically detected when:
+The Universal LED Control Protocol automatically adapts commands for different board types:
 
-- `board.getLedProtocol()` returns `'Digital'`
-- These boards support the same command interface but with limited color capability
+- **RGB LEDs** (XIAO RP2040): Full color support with NeoPixel/WS2812 effects
+- **Digital LEDs** (Arduino Uno R4, Raspberry Pi Pico): Commands converted to on/off equivalent
+- **Same interface**: No board-specific commands needed
 
-### ⚠️ Color Limitation Warnings
+### 🔧 Board Firmware Adaptation
 
-Digital LEDs provide user-friendly warnings when color features aren't supported:
+All color and effect conversions happen **inside the board firmware**:
 
-| Command Type | Warning Message | Behavior |
-|--------------|-----------------|----------|
-| **Color Setting** | `Note: Digital LED does not support colors. Color '<color>' ignored, turning LED on.` | LED turns on (bright) |
-| **Color Blink** | `Note: Digital LED does not support colors. Color '<color>' ignored, blinking LED.` | LED blinks on/off |
-| **Two Color Blink** | `Note: Digital LED does not support multi-color blinking. Colors '<color1>' and '<color2>' ignored, using single-color blink.` | Single color blink |
-| **Rainbow Effect** | `Note: Digital LED does not support rainbow effect. Using simple blink instead.` | Simple on/off blink |
+| Command Type | RGB Board Behavior | Digital LED Board Behavior |
+|--------------|-------------------|---------------------------|
+| **COLOR,255,0,0** | Red color displayed | LED turns on (bright) |
+| **BLINK1,0,255,0,500** | Green blink at 500ms | On/off blink at 500ms |
+| **BLINK2,255,0,0,0,0,255,500** | Red/blue alternating blink | On/off blink at 500ms |
+| **RAINBOW,100** | Rainbow color cycle | On/off blink at 100ms |
 
-### 🤍 White Color Exception
+### 📡 Unified Command Interface
 
-- **No warning** when `white` is specified (treated as default/natural LED color)
-- Commands work normally: `cc-led --port COM5 --color white` → No warning, LED turns on
-
-**📝 Digital LED Examples:**
+**📝 Examples - Same commands, different results:**
 
 ```bash
-# ✅ Works without warnings
-cc-led --port COM5 --on                     # LED on
-cc-led --port COM5 --off                    # LED off  
-cc-led --port COM5 --blink                  # LED blinks
-cc-led --port COM5 --color white            # LED on (no warning)
+# Same command works on all boards
+cc-led --color red -p COM3        # XIAO RP2040: Red light
+cc-led --color red -p COM5        # Arduino Uno R4: LED on
 
-# ⚠️ Shows warnings but still works
-cc-led --port COM5 --color red              # Warning + LED on
-cc-led --port COM5 --rainbow                # Warning + simple blink
+cc-led --rainbow -p COM3           # XIAO RP2040: Rainbow effect  
+cc-led --rainbow -p COM5           # Arduino Uno R4: Blink effect
 ```
 
 ---
@@ -559,7 +554,7 @@ cc-led --port COM3 --color red
 ### 💻 Implementation Reference
 
 - **[🎛️ controller.js](../src/controller.js)** - Core protocol implementation
-- **[📋 Board Configurations](../boards/)** - Board-specific settings and sketches
+- **[📋 Board Configurations](../sketches/)** - Board-specific settings and sketches
 
 ### 🔧 Tools & Development
 

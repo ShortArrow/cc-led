@@ -13,14 +13,17 @@ cc-led/                          # NPM package root
 │   ├── controller.js           # LED controller via serial
 │   ├── boards/                 # Board management
 │   └── utils/                  # Utilities
-├── boards/                      # Board configurations and sketches
+├── sketches/                    # Board configurations and sketches
 │   ├── xiao-rp2040/            # XIAO RP2040 support
 │   │   ├── board.json          # Board configuration
-│   │   └── sketches/           # Arduino sketches
+│   │   ├── LEDBlink/           # Arduino sketches
+│   │   └── UniversalLedControl/
 │   ├── arduino-uno-r4/         # Arduino Uno R4 support
 │   │   ├── board.json          # Board configuration
-│   │   └── sketches/           # Arduino sketches
-│   └── raspberry-pi-pico/      # Raspberry Pi Pico support
+│   │   ├── LEDBlink/           # Arduino sketches
+│   │   └── UniversalLedControl/
+│   ├── raspberry-pi-pico/      # Raspberry Pi Pico support
+│   └── common/                 # Shared Arduino libraries
 ├── test/                        # Vitest test files
 └── legacy/                      # PowerShell scripts (legacy)
 ```
@@ -169,17 +172,17 @@ cc-led examples
 cc-led led --on -p COM3                    # Turn LED on (white)
 cc-led led --off -p COM3                   # Turn LED off
 
-# Set solid color (RGB boards show color, Digital LEDs show white/on)
+# Set solid color (board firmware executes within its LED capabilities)
 cc-led led --color red -p COM3
 cc-led led --color "255,128,0" -p COM3     # Custom RGB
 
 # Blink single color
 cc-led led --blink --color green --interval 500 -p COM3
 
-# Blink two colors (RGB boards alternate colors, Digital LEDs blink white)
+# Blink two colors (board firmware adapts to its LED type)
 cc-led led --blink --color red --second-color blue --interval 1000 -p COM3
 
-# Rainbow effect (RGB boards show rainbow, Digital LEDs blink)
+# Rainbow effect (board firmware adapts to its LED capabilities)
 cc-led led --rainbow --interval 50 -p COM3
 
 # Examples on different ports (same commands work on all boards)
@@ -225,16 +228,16 @@ ls /dev/tty*  # Look for /dev/ttyACM0 or similar
 cc-led implements a **universal protocol** that works across all supported boards through a unified command processing system:
 
 1. **Arduino-Independent Command Processing**
-   - Pure C implementation in `boards/common/src/CommandProcessor.h/c`
+   - Pure C implementation in `sketches/common/src/CommandProcessor.h/c`
    - Shared parsing logic across all board types
    - Comprehensive unit testing with Unity framework (17 test cases)
 
 2. **Board-Agnostic CLI Commands**
    ```bash
-   # Same commands work on all boards
-   cc-led led --color red -p COM3      # RGB boards show red, Digital LEDs turn on
+   # Same commands work on all boards with Universal protocol auto-conversion
+   cc-led led --color red -p COM3      # Auto-converts to appropriate format per board
    cc-led led --blink -p COM3          # All boards blink
-   cc-led led --rainbow -p COM3        # RGB boards show rainbow, Digital LEDs blink
+   cc-led led --rainbow -p COM3        # Auto-adapts to board capabilities
    ```
 
 3. **Clean Architecture with Dependency Injection**

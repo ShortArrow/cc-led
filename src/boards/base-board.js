@@ -99,10 +99,4 @@ export class BaseBoard {
     }));
   }
 
-  /**
-   * Get LED control protocol
-   */
-  getLedProtocol() {
-    return this.config.led?.protocol || 'Digital';
-  }
 }
