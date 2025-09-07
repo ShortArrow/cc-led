@@ -12,15 +12,14 @@
 5. [Phase 2: Boundary & Error Tests](#phase-2-boundary--error-tests)
 6. [Phase 3: Priority & CLI Option Conflict Tests](#phase-3-priority--cli-option-conflict-tests)
 7. [Phase 4: Response Processing Tests](#phase-4-response-processing-tests)
-8. [Phase 5: Digital LED Special Tests](#phase-5-digital-led-special-tests)
-9. [Phase 6: Performance & Resource Tests](#phase-6-performance--resource-tests)
-10. [Phase 7: Arduino Integration Tests](#phase-7-arduino-integration-tests)
-11. [Phase 8: Config & Environment Tests](#phase-8-config--environment-tests)
-12. [Phase 9: End-to-End CLI Tests](#phase-9-end-to-end-cli-tests)
-13. [Phase 10: Arduino CLI Command Generation Tests](#phase-10-arduino-cli-command-generation-tests)
-14. [Phase 11: Arduino Command Processing Tests](#phase-11-arduino-command-processing-tests)
-15. [Phase 12: Arduino CLI Configuration Priority Tests](#phase-12-arduino-cli-configuration-priority-tests)
-16. [Related Documentation](#related-documentation)
+8. [Phase 6: Performance & Resource Tests](#phase-6-performance--resource-tests)
+9. [Phase 7: Arduino Integration Tests](#phase-7-arduino-integration-tests)
+10. [Phase 8: Config & Environment Tests](#phase-8-config--environment-tests)
+11. [Phase 9: End-to-End CLI Tests](#phase-9-end-to-end-cli-tests)
+12. [Phase 10: Arduino CLI Command Generation Tests](#phase-10-arduino-cli-command-generation-tests)
+13. [Phase 11: Arduino Command Processing Tests](#phase-11-arduino-command-processing-tests)
+14. [Phase 12: Arduino CLI Configuration Priority Tests](#phase-12-arduino-cli-configuration-priority-tests)
+15. [Related Documentation](#related-documentation)
 
 ---
 
@@ -36,7 +35,6 @@ The current test suite provides comprehensive coverage for:
 - ✅ **Boundary Validation**: RGB value limits, interval boundaries, input validation
 - ✅ **Command Priority**: Conflict resolution and precedence handling
 - ✅ **Response Processing**: ACCEPTED/REJECT/timeout response handling
-- ✅ **Digital LED Protocol**: Board-specific warnings and limitations
 
 # Integration & System (Phases 6-10)
 - ✅ **Performance Testing**: Response time and memory leak validation
@@ -75,7 +73,6 @@ These areas require real hardware or advanced testing infrastructure:
 | **Phase 2** | Boundary Values | 14 tests | 🔥 High |
 | **Phase 3** | Priority & CLI Conflicts | 14 tests | 🟡 Medium |
 | **Phase 4** | Response Processing | 5 tests | 🔥 High |
-| **Phase 5** | Digital LED Protocol | 4 tests | 🟡 Medium |
 | **Phase 6** | Performance & Resources | 4 tests | 🟢 Low |
 | **Phase 7** | Arduino Integration | 12 tests | 🔥 High |
 | **Phase 8** | Config & Environment | 11 tests | 🟡 Medium |
@@ -310,16 +307,11 @@ test('P4-004: No response triggers timeout message', () => {});
 
 ---
 
-## Phase 5: Digital LED Special Tests
 
 **Priority: Medium** - Digital LED protocol-specific validation
 
 | Test ID | Category | Test Case | Expected Behavior | Validation Item |
 |---------|----------|-----------|-------------------|-----------------|
-| **P5-001** | Digital LED | `--color red` (Digital board) | Warning + command sent | Color limitation warning |
-| **P5-002** | Digital LED | `--color white` (Digital board) | No warning + command sent | White color exception |
-| **P5-003** | Digital LED | `--rainbow` (Digital board) | Warning + RAINBOW sent | Rainbow limitation warning |
-| **P5-004** | Digital LED | `--blink red --second-color blue` (Digital) | Warning + BLINK2 sent | Two-color limitation warning |
 
 **Test ID Examples:**
 ```javascript
@@ -365,7 +357,6 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 2. ✅ **P2-001 to P2-014**: RGB boundary and interval tests (Phase 2)  
 3. ✅ **P3-001 to P3-014**: Command priority and CLI conflict tests (Phase 3)
 4. ✅ **P4-001 to P4-005**: Response processing tests (Phase 4)
-5. ✅ **P5-001 to P5-004**: Digital LED protocol tests (Phase 5)
 6. ✅ **P6-001 to P6-004**: Performance and resource tests (Phase 6)
 7. ✅ **A1-001 to A1-012**: Arduino integration tests (Phase 7)
 8. ✅ **C1-001 to C1-011**: Config and environment tests (Phase 8)
@@ -489,7 +480,7 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **A2-004** | Log Level Trace | `--log-level trace upload LEDBlink` | `arduino-cli upload --log-level trace <args>` | Trace log level propagation |
 | **A2-005** | Build Directory | `compile LEDBlink` | `--build-path <workingDir>/.build/<board-id>/LEDBlink` | Build path generation |
 | **A2-006** | Config File | All commands | `--config-file <workingDir>/arduino-cli.yaml` | Config file usage |
-| **A2-007** | Sketch Path Resolution | `compile NeoPixel_SerialControl` | Resolves to `<packageRoot>/boards/xiao-rp2040/sketches/NeoPixel_SerialControl/NeoPixel_SerialControl.ino` | Sketch path resolution |
+| **A2-007** | Sketch Path Resolution | `compile NeoPixel_SerialControl` | Resolves to `<packageRoot>/sketches/xiao-rp2040/sketches/NeoPixel_SerialControl/NeoPixel_SerialControl.ino` | Sketch path resolution |
 | **A2-008** | Multiple Boards | `--board arduino-uno-r4 compile SerialLedControl` | `arduino-cli compile --fqbn arduino:avr:uno_r4_minima <sketch-path>` | Different board FQBN mapping |
 | **A2-009** | Install Command | `--board xiao-rp2040 install` | `arduino-cli core install rp2040:rp2040` and `arduino-cli lib install "Adafruit NeoPixel@1.15.1"` | Board-specific installation |
 | **A2-010** | Command Sequence | `install` then `compile` then `upload` | Correct arduino-cli command sequence with proper parameters | Command chaining validation |

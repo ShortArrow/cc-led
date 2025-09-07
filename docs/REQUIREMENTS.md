@@ -21,7 +21,7 @@ cc-led/                     # NPM package root (can be installed globally)
 │   ├── controller.js     # LED controller via serial
 │   ├── boards/           # Board management system
 │   └── utils/            # Configuration utilities
-├── boards/                # Board configurations & sketches (bundled in package)
+├── sketches/              # Board configurations & sketches (bundled in package)
 │   ├── common/           # Universal command processing (NEW)
 │   │   ├── src/         # CommandProcessor.h/c for all boards
 │   │   └── test/        # Unity test framework (17 test cases)
@@ -61,7 +61,7 @@ class XiaoRP2040Board extends BaseBoard {
 
 **Command Processing Pipeline**:
 ```c
-// boards/common/src/CommandProcessor.h
+// sketches/common/src/CommandProcessor.h
 bool parseColorCommand(const char* cmd, uint8_t* r, uint8_t* g, uint8_t* b);
 bool parseBlink1Command(const char* cmd, uint8_t* r, uint8_t* g, uint8_t* b, long* interval);
 bool parseBlink2Command(const char* cmd, uint8_t* r1, uint8_t* g1, uint8_t* b1,
@@ -197,8 +197,8 @@ cc-led --board xiao-rp2040 compile LEDBlink
   },
   "files": [
     "src/**/*.js",
-    "boards/**/*.json",
-    "boards/**/*.ino",
+    "sketches/**/*.json",
+    "sketches/**/*.ino",
     "README.md"
   ],
   "dependencies": {
@@ -270,8 +270,8 @@ C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global 
 │   ├── cli.js             # Main entry point (bin target)
 │   ├── arduino.js         # Arduino CLI wrapper
 │   ├── controller.js      # LED controller
-│   └── boards/            # Board management
-└── boards/                 # Board configurations & sketches (bundled)
+│   └── sketches/            # Board management
+└── sketches/                 # Board configurations & sketches (bundled)
     ├── xiao-rp2040/       # Board-specific directory
     │   ├── board.json     # Board configuration
     │   └── sketches/      # Arduino sketches
@@ -302,8 +302,8 @@ C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global 
 
 | Path Type | Source | Resolution Strategy |
 |-----------|--------|-------------------|
-| Board configs | `packageRoot/boards/*/board.json` | Package installation directory (read-only) |
-| Sketches | `packageRoot/boards/*/sketches/*` | Package installation directory (read-only) |
+| Board configs | `packageRoot/sketches/*/board.json` | Package installation directory (read-only) |
+| Sketches | `packageRoot/sketches/*/sketches/*` | Package installation directory (read-only) |
 | Arduino environment | `workingDir/.arduino/` | Current working directory (read-write) |
 | Config file | `workingDir/arduino-cli.yaml` | Current working directory (read-write) |
 | Build output | `workingDir/.build/<board-id>/<sketch>/` | Current working directory (read-write) |

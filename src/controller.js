@@ -22,8 +22,7 @@ export class LedController {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
-    // Protocol detection: check board option, fallback to Universal
-    this.protocol = options.board?.getLedProtocol ? options.board.getLedProtocol() : 'Universal';
+    // Always use Universal protocol - Arduino handles conversion internally
   }
 
   /**
@@ -121,9 +120,6 @@ export class LedController {
    */
   async setColor(color) {
     const rgb = this.parseColor(color);
-    if (this.protocol === 'Digital' && color !== 'white') {
-      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, turning LED on.`);
-    }
     await this.sendCommand(`COLOR,${rgb}`);
   }
 
@@ -152,9 +148,6 @@ export class LedController {
   async blink2Colors(color1, color2, interval = 500) {
     const rgb1 = this.parseColor(color1);
     const rgb2 = this.parseColor(color2);
-    if (this.protocol === 'Digital') {
-      console.log(`Note: Digital LED does not support multi-color blinking. Colors '${color1}' and '${color2}' ignored, using single-color blink.`);
-    }
     await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
   }
 
@@ -163,9 +156,6 @@ export class LedController {
    * @param {number} interval - Rainbow speed in milliseconds
    */
   async rainbow(interval = 50) {
-    if (this.protocol === 'Digital') {
-      console.log('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
-    }
     await this.sendCommand(`RAINBOW,${interval}`);
   }
 

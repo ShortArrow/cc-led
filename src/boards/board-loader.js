@@ -11,8 +11,8 @@ const __dirname = dirname(__filename);
  */
 export class BoardLoader {
   constructor() {
-    // Use package installation directory for boards
-    this.boardsDir = join(__dirname, '..', '..', 'boards');
+    // Use package installation directory for sketches
+    this.boardsDir = join(__dirname, '..', '..', 'sketches');
     this.availableBoards = this.scanBoards();
   }
 

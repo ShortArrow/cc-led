@@ -124,7 +124,7 @@ it('C2-009: should use same config file across install, compile, and upload comm
   // Mock sketch directory existence
   mockFileSystem.addDirectory('/test/sketches/TestSketch');
   
-  await arduinoService.install(board);
+  await arduinoService.install({ board });
   await arduinoService.compile('TestSketch', board);
   
   const commands = mockProcessExecutor.executedCommands;
