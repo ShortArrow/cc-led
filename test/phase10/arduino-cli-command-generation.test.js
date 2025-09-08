@@ -126,7 +126,7 @@ test('A2-004: Trace log level propagation to Arduino CLI', async () => {
   const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
   // Execute: deploy with trace log level
-  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { logLevel: 'trace' });
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { logLevel: 'trace', port: 'COM3' });
   
   const spawnCalls = mockProcessExecutor.getSpawnCalls();
   expect(spawnCalls).toHaveLength(1);
@@ -191,7 +191,7 @@ test('A2-006: Config file parameter included in all Arduino CLI commands', async
   
   // Execute: all three command types
   await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' });
-  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040', port: 'COM3' });
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { port: 'COM3' });
   
   const spawnCalls = mockProcessExecutor.getSpawnCalls();
   expect(spawnCalls).toHaveLength(2);
