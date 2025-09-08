@@ -222,6 +222,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 - Local `.arduino` directory package management (Python .venv equivalent)
 - Dynamic `arduino-cli.yaml` generation
 - Configurable arduino-cli.yaml file location with priority system
+- Configurable log level support for debugging
 
 #### 9.1 Arduino CLI Configuration File Priority
 
@@ -252,6 +253,35 @@ createLocalConfig() {
   // Enables project-specific Arduino environments
 }
 ```
+
+#### 9.2 Log Level Support
+
+**Purpose**: Control verbosity of both cc-led and Arduino CLI output for debugging
+
+**Supported Log Levels**:
+- `trace`: Most verbose - all internal operations
+- `debug`: Detailed debugging information  
+- `info`: General information (default)
+- `warn`: Warning messages only
+- `error`: Error messages only
+- `fatal`: Fatal errors only
+
+**Usage**:
+```bash
+# Future CLI implementation
+cc-led --log-level debug compile LEDBlink
+cc-led --log-level trace upload LEDBlink --port COM3
+```
+
+**Affected Components**:
+- **cc-led CLI**: Controls internal logging (config path selection, command execution details)
+- **Arduino CLI**: Log level is passed through to arduino-cli commands
+
+**Requirements**:
+- Log level affects both cc-led internal logging and Arduino CLI output
+- Default log level is `info` when not specified
+- Debug mode displays arduino-cli.yaml path selection and other internal decisions
+- Higher verbosity levels include all lower level messages
 
 **Directory Strategy**:
 - **Board files & sketches**: Read from package installation directory (`packageRoot`)

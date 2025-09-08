@@ -1,5 +1,9 @@
 #include "SerialCommandHandler.h"
 
+extern "C" {
+  #include "CommandProcessor.h"
+}
+
 SerialCommandHandler::SerialCommandHandler(LEDController* ledController) 
   : led(ledController), commandReady(false) {
 }
@@ -40,7 +44,7 @@ void SerialCommandHandler::processCommands() {
 void SerialCommandHandler::processCommand(const String& cmd) {
   // Use CommandProcessor for parsing and response generation
   CommandResponse response;
-  processCommand(cmd.c_str(), &response);
+  ::processCommand(cmd.c_str(), &response);  // Call global C function
   
   // Execute LED actions based on successful parsing
   if (response.result == COMMAND_ACCEPTED) {

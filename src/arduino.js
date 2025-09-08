@@ -30,6 +30,7 @@ export class ArduinoService {
     
     const config = loadConfig();
     this.fqbn = options.fqbn || config.fqbn;
+    this.logLevel = options.logLevel || 'info';
     
     // Determine config file path based on priority system
     this.configFile = this.resolveConfigFile(options.configFile);
@@ -127,17 +128,19 @@ board_manager:
   /**
    * Execute arduino-cli command
    * @param {string[]} args - Command arguments
-   * @param {string} [logLevel='info'] - Log level for arduino-cli
+   * @param {string} [logLevel=null] - Log level for arduino-cli (null uses instance default)
    * @returns {Promise<string>} Command output
    */
-  async execute(args, logLevel = 'info') {
+  async execute(args, logLevel = null) {
+    const effectiveLogLevel = logLevel || this.logLevel || 'info';
+    
     // Log config file selection for debugging
-    if (logLevel === 'debug') {
+    if (effectiveLogLevel === 'debug') {
       console.log(`Using arduino-cli config file: ${this.configFile}`);
     }
     
     return new Promise((resolve, reject) => {
-      const fullArgs = ['--log', '--log-level', logLevel, '--config-file', this.configFile, ...args];
+      const fullArgs = ['--log', '--log-level', effectiveLogLevel, '--config-file', this.configFile, ...args];
       const proc = this.processExecutor.spawn('arduino-cli', fullArgs, {
         cwd: this.workingDir,
         shell: true
@@ -195,7 +198,9 @@ board_manager:
       throw new Error(`Sketch directory does not exist: ${sketchPath}`);
     }
     
-    const args = ['compile', '--fqbn', board.fqbn || this.fqbn, sketchPath];
+    // Add common library path for sketches that need it
+    const commonLibPath = join(this.packageRoot, 'sketches', 'common');
+    const args = ['compile', '--fqbn', board.fqbn || this.fqbn, '--libraries', commonLibPath, sketchPath];
     return this.execute(args, logLevel);
   }
 
@@ -220,7 +225,9 @@ board_manager:
     const port = options.port || getSerialPort();
     const logLevel = options.logLevel || 'info';
     
-    const args = ['upload', '--fqbn', board.fqbn || this.fqbn, '--port', port, sketchPath];
+    // Add common library path for sketches that need it
+    const commonLibPath = join(this.packageRoot, 'sketches', 'common');
+    const args = ['upload', '--fqbn', board.fqbn || this.fqbn, '--libraries', commonLibPath, '--port', port, sketchPath];
     return this.execute(args, logLevel);
   }
 
