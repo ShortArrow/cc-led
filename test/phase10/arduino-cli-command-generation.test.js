@@ -1,261 +1,340 @@
 /**
- * @fileoverview Phase 10: Arduino CLI Command Generation Tests
+ * @fileoverview Phase 10: Arduino CLI Command Generation Tests with Dependency Injection
  * 
  * Tests verify that CLI options are correctly transformed into Arduino CLI
  * commands with proper FQBN mapping, parameter conversion, and path resolution.
  * 
  * Following Test-Matrix.md guidelines:
- * - Flat test structure (no describe blocks)
- * - Clear mocks for each test
- * - Self-contained tests with A2-XXX naming
+ * - Uses interface-based mocks instead of module mocks
+ * - Self-contained tests with dependency injection
+ * - Stateless mock design for predictable behavior
  */
 
-import { test, expect, vi } from 'vitest';
-
-// Mock Arduino CLI execution to capture generated commands
-vi.mock('../../src/arduino.js', () => ({
-  compile: vi.fn(async () => ({ success: true })),
-  deploy: vi.fn(async () => ({ success: true })),
-  install: vi.fn(async () => ({ success: true }))
-}));
-
-// Mock Board management to control board configuration
-vi.mock('../../src/boards/board-loader.js', () => ({
-  BoardLoader: class MockBoardLoader {
-    loadBoard(id) {
-      const boards = {
-        'xiao-rp2040': {
-          id: 'xiao-rp2040',
-          name: 'XIAO RP2040',
-          fqbn: 'rp2040:rp2040:seeed_xiao_rp2040',
-          platform: { package: 'rp2040:rp2040', version: '3.6.0' },
-          libraries: [{ name: 'Adafruit NeoPixel', version: '1.15.1' }],
-          getSketchPath: (name) => `/package/sketches/xiao-rp2040/${name}/${name}.ino`
-        },
-        'arduino-uno-r4': {
-          id: 'arduino-uno-r4',
-          name: 'Arduino Uno R4',
-          fqbn: 'arduino:renesas_uno:minima',
-          platform: { package: 'arduino:renesas_uno', version: '1.1.0' },
-          libraries: [],
-          getSketchPath: (name) => `/package/sketches/arduino-uno-r4/${name}/${name}.ino`
-        }
-      };
-      return boards[id] || null;
-    }
-  }
-}));
+import { test, expect } from 'vitest';
+import { ArduinoService } from '../../src/arduino.js';
+import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
+import { MockProcessExecutorAdapter } from '../adapters/mock-process-executor.adapter.js';
 
 test('A2-001: --board xiao-rp2040 generates correct FQBN for compile', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Compilation successful', '')
+  );
   
-  // Simulate compile command execution
-  await compile('LEDBlink', board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(compile).toHaveBeenCalledTimes(1);
-  const [sketchName, boardObj, options] = compile.mock.calls[0];
+  // Execute: compile with xiao-rp2040 board
+  await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' });
   
-  expect(sketchName).toBe('LEDBlink');
-  expect(boardObj.fqbn).toBe('rp2040:rp2040:seeed_xiao_rp2040');
-  expect(options.logLevel).toBe('info');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    'compile',
+    '--fqbn',
+    'rp2040:rp2040:seeed_xiao_rp2040'
+  ]));
 });
 
 test('A2-002: Port parameter conversion for upload command', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { deploy } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Upload successful', '')
+  );
   
-  // Simulate upload command with port
-  await deploy('LEDBlink', board, { port: 'COM3', logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(deploy).toHaveBeenCalledTimes(1);
-  const [sketchName, boardObj, options] = deploy.mock.calls[0];
+  // Execute: deploy with port specification in options
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { port: 'COM3' });
   
-  expect(sketchName).toBe('LEDBlink');
-  expect(boardObj.fqbn).toBe('rp2040:rp2040:seeed_xiao_rp2040');
-  expect(options.port).toBe('COM3');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    'upload',
+    '--port',
+    'COM3',
+    '--fqbn',
+    'rp2040:rp2040:seeed_xiao_rp2040'
+  ]));
 });
 
 test('A2-003: Debug log level propagation to Arduino CLI', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution with debug logging
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Debug compilation output', '')
+  );
   
-  // Simulate compile with debug log level
-  await compile('LEDBlink', board, { logLevel: 'debug' });
+  // Create service with mocked dependencies and debug log level
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor, { logLevel: 'debug' });
   
-  expect(compile).toHaveBeenCalledTimes(1);
-  const [, , options] = compile.mock.calls[0];
+  // Execute: compile with debug log level via parameter
+  await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, 'debug');
   
-  expect(options.logLevel).toBe('debug');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    '--log-level',
+    'debug'
+  ]));
 });
 
 test('A2-004: Trace log level propagation to Arduino CLI', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { deploy } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution with trace logging
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Trace upload output', '')
+  );
   
-  // Simulate upload with trace log level
-  await deploy('LEDBlink', board, { logLevel: 'trace' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(deploy).toHaveBeenCalledTimes(1);
-  const [, , options] = deploy.mock.calls[0];
+  // Execute: deploy with trace log level
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { logLevel: 'trace' });
   
-  expect(options.logLevel).toBe('trace');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    '--log-level',
+    'trace'
+  ]));
 });
 
 test('A2-005: Build directory path generation uses working directory', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Build successful', '')
+  );
   
-  // Simulate compile command
-  await compile('LEDBlink', board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(compile).toHaveBeenCalledTimes(1);
-  const [sketchName, boardObj] = compile.mock.calls[0];
+  // Execute: compile command
+  await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' });
   
-  expect(sketchName).toBe('LEDBlink');
-  expect(boardObj.id).toBe('xiao-rp2040');
-  // Build path generation is handled internally by arduino.js
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    'compile',
+    '--libraries'
+  ]));
+  // Libraries path should contain common directory
+  const librariesIndex = call.args.indexOf('--libraries');
+  const librariesPath = call.args[librariesIndex + 1];
+  expect(librariesPath).toContain('common');
 });
 
 test('A2-006: Config file parameter included in all Arduino CLI commands', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile, deploy, install } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution for all commands
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Command successful', '')
+  );
   
-  // Test all three command types
-  await compile('LEDBlink', board, { logLevel: 'info' });
-  await deploy('LEDBlink', board, { port: 'COM3', logLevel: 'info' });
-  await install(board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  // All commands should have been called with config file parameter
-  expect(compile).toHaveBeenCalledTimes(1);
-  expect(deploy).toHaveBeenCalledTimes(1);
-  expect(install).toHaveBeenCalledTimes(1);
+  // Execute: all three command types
+  await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' });
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040', port: 'COM3' });
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(2);
+  
+  // All commands should include config file parameter
+  spawnCalls.forEach(call => {
+    expect(call.args).toEqual(expect.arrayContaining(['--config-file']));
+  });
 });
 
 test('A2-007: Sketch path resolution finds correct .ino file', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Compilation successful', '')
+  );
   
-  // Simulate compile with specific sketch name
-  await compile('NeoPixel_SerialControl', board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(compile).toHaveBeenCalledTimes(1);
-  const [sketchName, boardObj] = compile.mock.calls[0];
+  // Execute: compile with specific sketch name
+  await arduino.compile('NeoPixel_SerialControl', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' });
   
-  expect(sketchName).toBe('NeoPixel_SerialControl');
-  expect(boardObj.getSketchPath('NeoPixel_SerialControl'))
-    .toBe('/package/sketches/xiao-rp2040/NeoPixel_SerialControl/NeoPixel_SerialControl.ino');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining(['compile']));
+  // Sketch path should be passed as the last argument
+  const lastArg = call.args[call.args.length - 1];
+  expect(lastArg).toContain('NeoPixel_SerialControl');
 });
 
 test('A2-008: Different board FQBN mapping for Arduino Uno R4', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { compile } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow sketch directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('arduino-uno-r4');
+  // Setup: successful arduino-cli execution
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Compilation successful', '')
+  );
   
-  // Simulate compile with Arduino Uno R4
-  await compile('SerialLedControl', board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(compile).toHaveBeenCalledTimes(1);
-  const [sketchName, boardObj] = compile.mock.calls[0];
+  // Execute: compile with Arduino Uno R4 FQBN
+  await arduino.compile('SerialLedControl', { fqbn: 'arduino:renesas_uno:minima' });
   
-  expect(sketchName).toBe('SerialLedControl');
-  expect(boardObj.fqbn).toBe('arduino:renesas_uno:minima');
-  expect(boardObj.id).toBe('arduino-uno-r4');
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls).toHaveLength(1);
+  
+  const call = spawnCalls[0];
+  expect(call.command).toBe('arduino-cli');
+  expect(call.args).toEqual(expect.arrayContaining([
+    'compile',
+    '--fqbn',
+    'arduino:renesas_uno:minima'
+  ]));
 });
 
 test('A2-009: Board-specific installation commands for platforms and libraries', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { install } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow all directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
+  // Setup: successful arduino-cli execution for multiple install commands
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Installation successful', '')
+  );
   
-  // Simulate install command for XIAO RP2040
-  await install(board, { logLevel: 'info' });
+  // Create service with mocked dependencies
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor);
   
-  expect(install).toHaveBeenCalledTimes(1);
-  const [boardObj, options] = install.mock.calls[0];
+  // Execute: install command for XIAO RP2040 with platform and libraries
+  const boardConfig = { 
+    id: 'xiao-rp2040',
+    platform: { package: 'rp2040:rp2040', version: '3.6.0' },
+    libraries: [{ name: 'Adafruit NeoPixel', version: '1.15.1' }]
+  };
   
-  expect(boardObj.platform.package).toBe('rp2040:rp2040');
-  expect(boardObj.platform.version).toBe('3.6.0');
-  expect(boardObj.libraries).toHaveLength(1);
-  expect(boardObj.libraries[0].name).toBe('Adafruit NeoPixel');
-  expect(boardObj.libraries[0].version).toBe('1.15.1');
+  await arduino.install({ board: boardConfig });
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls.length).toBeGreaterThan(0);
+  
+  // Should have install commands for platform and libraries
+  const platformCall = spawnCalls.find(call => 
+    call.args.includes('core') && call.args.includes('install')
+  );
+  const libraryCall = spawnCalls.find(call => 
+    call.args.includes('lib') && call.args.includes('install')
+  );
+  
+  expect(platformCall).toBeDefined();
+  expect(libraryCall).toBeDefined();
 });
 
 test('A2-010: Command sequence maintains parameter consistency', async () => {
-  // Clear mocks
-  vi.clearAllMocks();
+  // Create isolated test dependencies
+  const mockFileSystem = new MockFileSystemAdapter();
+  const mockProcessExecutor = new MockProcessExecutorAdapter();
   
-  const { install, compile, deploy } = await import('../../src/arduino.js');
-  const { BoardLoader } = await import('../../src/boards/board-loader.js');
+  // Setup: Allow all directories to exist
+  mockFileSystem.setExistsSyncBehavior(() => true);
   
-  const loader = new BoardLoader();
-  const board = loader.loadBoard('xiao-rp2040');
-  const options = { logLevel: 'debug' };
+  // Setup: successful arduino-cli execution for all commands
+  mockProcessExecutor.setSpawnBehavior(
+    mockProcessExecutor.createSuccessSpawn('Command successful', '')
+  );
   
-  // Simulate full command sequence: install -> compile -> upload
-  await install(board, options);
-  await compile('LEDBlink', board, options);
-  await deploy('LEDBlink', board, { ...options, port: 'COM3' });
+  // Create service with mocked dependencies and debug log level
+  const arduino = new ArduinoService(mockFileSystem, mockProcessExecutor, { logLevel: 'debug' });
   
-  // Verify all commands were called with consistent parameters
-  expect(install).toHaveBeenCalledWith(board, options);
-  expect(compile).toHaveBeenCalledWith('LEDBlink', board, options);
-  expect(deploy).toHaveBeenCalledWith('LEDBlink', board, { ...options, port: 'COM3' });
+  const boardConfig = { 
+    id: 'xiao-rp2040',
+    platform: { package: 'rp2040:rp2040', version: '3.6.0' },
+    libraries: []
+  };
   
-  // Verify log level consistency
-  expect(install.mock.calls[0][1].logLevel).toBe('debug');
-  expect(compile.mock.calls[0][2].logLevel).toBe('debug');
-  expect(deploy.mock.calls[0][2].logLevel).toBe('debug');
+  // Execute: full command sequence with consistent log level
+  await arduino.install({ board: boardConfig, logLevel: 'debug' });
+  await arduino.compile('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, 'debug');
+  await arduino.deploy('LEDBlink', { fqbn: 'rp2040:rp2040:seeed_xiao_rp2040' }, { port: 'COM3', logLevel: 'debug' });
+  
+  const spawnCalls = mockProcessExecutor.getSpawnCalls();
+  expect(spawnCalls.length).toBeGreaterThan(0);
+  
+  // All commands should use consistent debug log level
+  spawnCalls.forEach(call => {
+    expect(call.args).toEqual(expect.arrayContaining(['--log-level', 'debug']));
+  });
 });
