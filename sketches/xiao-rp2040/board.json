@@ -1,0 +1,42 @@
+{
+  "name": "XIAO RP2040",
+  "id": "xiao-rp2040",
+  "fqbn": "rp2040:rp2040:seeed_xiao_rp2040",
+  "platform": {
+    "package": "rp2040:rp2040",
+    "version": "4.7.1"
+  },
+  "libraries": [
+    {
+      "name": "Adafruit NeoPixel",
+      "version": "1.15.1"
+    }
+  ],
+  "led": {
+    "type": "neopixel",
+    "pin": 12,
+    "power_pin": 11,
+    "count": 1,
+    "protocol": "WS2812"
+  },
+  "serial": {
+    "baudRate": 9600,
+    "defaultPort": {
+      "windows": "COM3",
+      "linux": "/dev/ttyACM0",
+      "darwin": "/dev/tty.usbmodem*"
+    }
+  },
+  "sketches": {
+    "UniversalLedControl": {
+      "path": "UniversalLedControl",
+      "description": "LED control with common protocol (RGB WS2812)",
+      "default": true
+    },
+    "LEDBlink": {
+      "path": "LEDBlink", 
+      "description": "Basic LED blink for write/upload testing"
+    }
+  },
+  "notes": "Uses built-in WS2812 RGB LED. Requires power pin (11) to be HIGH."
+}

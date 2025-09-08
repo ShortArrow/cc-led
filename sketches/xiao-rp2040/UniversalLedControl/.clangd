@@ -1,0 +1,11 @@
+CompileFlags:
+  Add: [
+    "-I", "../../../common/src",
+    "-I", "../../../../.arduino/data/libraries",
+    "-I", "../../../../.arduino/data/packages/arduino/tools/pqt-gcc",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/rp2040/5.0.0/variants/seeed_xiao_rp2040",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/rp2040/5.0.0/libraries",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/rp2040/5.0.0/cores/rp2040/api",
+    "-I", "../../../../.arduino/data/packages/arduino/hardware/rp2040/5.0.0/cores/rp2040",
+    "-I", "../../../../.arduino/data/packages/arduino/tools/pqt-gcc/4.1.0-1aec55e/include",
+  ]

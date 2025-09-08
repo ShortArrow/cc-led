@@ -1,0 +1,37 @@
+{
+  "name": "Raspberry Pi Pico",
+  "id": "raspberry-pi-pico",
+  "fqbn": "rp2040:rp2040:rpipico",
+  "platform": {
+    "package": "rp2040:rp2040",
+    "version": "4.7.1"
+  },
+  "libraries": [],
+  "led": {
+    "type": "gpio",
+    "pin": 25,
+    "count": 1,
+    "protocol": "Digital"
+  },
+  "serial": {
+    "baudRate": 9600,
+    "defaultPort": {
+      "windows": "COM3",
+      "linux": "/dev/ttyACM0",
+      "darwin": "/dev/tty.usbmodem*"
+    }
+  },
+  "sketches": {
+    "UniversalLedControl": {
+      "path": "UniversalLedControl",
+      "description": "LED control with common protocol (GPIO pin 25)",
+      "default": true
+    },
+    "LEDBlink": {
+      "path": "LEDBlink",
+      "description": "Basic LED blink for write/upload testing (GPIO pin 25)"
+    }
+  },
+  "notes": "Uses built-in GPIO LED on pin 25. Simple on/off control only.",
+  "status": "supported"
+}

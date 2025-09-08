@@ -10,7 +10,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:fast": "vitest run --reporter=basic --maxConcurrency=1",
+    "test:stable": "vitest run test/phase1/ test/phase2/ test/phase3/ test/phase4/ test/phase5/ test/phase6/ test/phase7/ test/phase8/ test/phase9/ test/phase10/ test/phase11/ --reporter=basic && npx vitest run --config vitest.config.phase12.js --reporter=basic",
+    "test:ci": "npm run test:stable",
+    "test:phase9": "vitest run test/phase9/cli-service.test.js",
+    "test:phase12": "npx vitest run --config vitest.config.phase12.js"
   },
   "keywords": [
     "arduino",

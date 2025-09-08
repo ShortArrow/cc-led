@@ -22,8 +22,7 @@ export class LedController {
     this.portName = port || getSerialPort();
     this.baudRate = options.baudRate || 9600;
     this.serialPort = null;
-    this.board = options.board;
-    this.protocol = this.board ? this.board.getLedProtocol() : 'WS2812';
+    // Always use Universal protocol - Arduino handles conversion internally
   }
 
   /**
@@ -121,9 +120,6 @@ export class LedController {
    */
   async setColor(color) {
     const rgb = this.parseColor(color);
-    if (this.protocol === 'Digital' && color !== 'white') {
-      console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, turning LED on.`);
-    }
     await this.sendCommand(`COLOR,${rgb}`);
   }
 
@@ -133,6 +129,9 @@ export class LedController {
    * @param {number} interval - Blink interval in milliseconds
    */
   async blink(color, interval = 500) {
+    if (interval <= 0) {
+      throw new Error('Invalid interval');
+    }
     const rgb = this.parseColor(color);
     if (this.protocol === 'Digital' && color && color !== 'white') {
       console.log(`Note: Digital LED does not support colors. Color '${color}' ignored, blinking LED.`);
@@ -149,9 +148,6 @@ export class LedController {
   async blink2Colors(color1, color2, interval = 500) {
     const rgb1 = this.parseColor(color1);
     const rgb2 = this.parseColor(color2);
-    if (this.protocol === 'Digital') {
-      console.log(`Note: Digital LED does not support multi-color blinking. Colors '${color1}' and '${color2}' ignored, using single-color blink.`);
-    }
     await this.sendCommand(`BLINK2,${rgb1},${rgb2},${interval}`);
   }
 
@@ -160,9 +156,6 @@ export class LedController {
    * @param {number} interval - Rainbow speed in milliseconds
    */
   async rainbow(interval = 50) {
-    if (this.protocol === 'Digital') {
-      console.log('Note: Digital LED does not support rainbow effect. Using simple blink instead.');
-    }
     await this.sendCommand(`RAINBOW,${interval}`);
   }
 
@@ -178,9 +171,14 @@ export class LedController {
       return COLORS[lowerColor];
     }
     
-    // Check if it's already an RGB string
-    if (/^\d{1,3},\d{1,3},\d{1,3}$/.test(color)) {
-      return color;
+    // Check if it's a potential RGB string (allowing negative and decimal numbers)
+    if (/^-?\d*\.?\d+,-?\d*\.?\d+,-?\d*\.?\d+$/.test(color)) {
+      const [r, g, b] = color.split(',').map(Number);
+      const inRange = (n) => Number.isInteger(n) && n >= 0 && n <= 255;
+      if (inRange(r) && inRange(g) && inRange(b)) {
+        return `${r},${g},${b}`;
+      }
+      throw new Error(`Invalid color: ${color}. RGB values must be between 0 and 255`);
     }
     
     throw new Error(`Invalid color: ${color}. Use a color name (red, green, blue, etc.) or RGB format (255,0,0)`);
@@ -193,13 +191,13 @@ export class LedController {
  */
 export async function executeCommand(options) {
   const controller = new LedController(options.port, {
-    board: options.board,
-    baudRate: options.board ? options.board.config.serial?.baudRate : 9600
+    baudRate: 9600  // Universal protocol uses standard 9600 baud rate
   });
   
   try {
     await controller.connect();
     
+    // Command priority: on/off > blink > rainbow > color
     if (options.on) {
       await controller.turnOn();
     } else if (options.off) {
@@ -216,10 +214,10 @@ export async function executeCommand(options) {
       } else {
         await controller.blink(blinkColor, options.interval);
       }
-    } else if (options.color) {
-      await controller.setColor(options.color);
     } else if (options.rainbow) {
       await controller.rainbow(options.interval);
+    } else if (options.color) {
+      await controller.setColor(options.color);
     } else {
       throw new Error('No action specified. Use --on, --off, --color, --blink, or --rainbow');
     }
