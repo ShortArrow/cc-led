@@ -28,6 +28,7 @@
 | `--color red` | `COLOR,255,0,0\n` | Solid red color |
 | `--blink` | `BLINK1,255,255,255,500\n` | White blink (500ms) |
 | `--rainbow` | `RAINBOW,50\n` | Rainbow effect (50ms) |
+| *(System)* | `VERSION\n` | *(Version inquiry)* |
 
 **💡 Common Patterns:**
 
@@ -38,6 +39,7 @@
 **🔧 Board Transparency:**
 
 The LED control protocol is board-agnostic. All boards use the same command format:
+
 - **No `--board` option needed** for LED commands
 - **Universal protocol**: Board firmware adapts commands to available LED capabilities
 - **Same commands**: Work across XIAO RP2040, Arduino Uno R4, Raspberry Pi Pico
@@ -149,6 +151,36 @@ cc-led led --port COM3 --blink red --second-color blue --interval 750
 cc-led led --port COM3 --rainbow                 # → RAINBOW,50\n
 cc-led led --port COM3 --rainbow --interval 100  # → RAINBOW,100\n
 ```
+
+### 🔍 Version Inquiry
+
+#### VERSION Command
+
+- **Command Type**: System inquiry (not user-initiated)
+- **Serial Output**: `VERSION\n`
+- **Purpose**: Hardware version and capability detection
+- **Response Format**: `VERSION,<version>,<board>,<firmware>,<buildDate>\n`
+- **Usage Context**: MCP server hardware discovery, diagnostic tools
+
+**Response Examples:**
+
+```bash
+# Arduino response format
+VERSION,1.0.0,xiao-rp2040,UniversalLedControl,2025-01-13\n
+
+# Response components:
+# - version: Firmware version (1.0.0)
+# - board: Target board identifier (xiao-rp2040)  
+# - firmware: Sketch name (UniversalLedControl)
+# - buildDate: Compilation date (2025-01-13)
+```
+
+**Implementation Notes:**
+
+- VERSION command is sent by MCP server for hardware detection
+- Timeout handling: 2 seconds, returns "unknown" on no response
+- Not exposed in CLI interface (system-level only)
+- Board compatibility: All supported boards should respond
 
 ---
 

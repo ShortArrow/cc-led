@@ -7,8 +7,70 @@
 
 import { it, expect, vi } from 'vitest';
 import { ArduinoService } from '../../src/arduino.js';
-import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
-import { MockProcessExecutorAdapter } from '../adapters/mock-process-executor.adapter.js';
+
+// Mock adapters defined inline
+class MockFileSystemAdapter {
+  constructor() {
+    this.existsSyncBehavior = () => false;
+  }
+
+  setExistsSyncBehavior(behavior) {
+    this.existsSyncBehavior = behavior;
+  }
+
+  existsSync(path) {
+    return this.existsSyncBehavior(path);
+  }
+
+  writeFileSync(path, content) {
+    // Mock implementation for config file writing
+  }
+}
+
+class MockProcessExecutorAdapter {
+  constructor() {
+    this.spawnBehavior = null;
+    this.spawnCalls = [];
+  }
+
+  setSpawnBehavior(behavior) {
+    this.spawnBehavior = behavior;
+  }
+
+  spawn(command, args, options = {}) {
+    const call = { command, args, options };
+    this.spawnCalls.push(call);
+    
+    if (this.spawnBehavior) {
+      return this.spawnBehavior(command, args, options);
+    }
+    return this.createSuccessSpawn('', '')();
+  }
+
+  createSuccessSpawn(stdout, stderr) {
+    return () => ({
+      stdout: { on: vi.fn((event, callback) => { if (event === 'data') callback(stdout); }) },
+      stderr: { on: vi.fn((event, callback) => { if (event === 'data') callback(stderr); }) },
+      on: vi.fn((event, callback) => { if (event === 'close') callback(0); })
+    });
+  }
+
+  createErrorSpawn(code, stderr = '') {
+    return () => ({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn((event, callback) => { if (event === 'data') callback(stderr); }) },
+      on: vi.fn((event, callback) => { if (event === 'close') callback(code); })
+    });
+  }
+
+  createFailureSpawn(code, stderr = '') {
+    return this.createErrorSpawn(code, stderr);
+  }
+
+  getSpawnCalls() {
+    return this.spawnCalls;
+  }
+}
 
 it('A1-001: should pass configuration file and arguments to arduino-cli and return stdout on success', async () => {
   // Create isolated test dependencies

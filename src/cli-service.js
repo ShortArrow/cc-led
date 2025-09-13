@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { createMcpCommands } from './presentation/mcp/mcp-cli-commands.js';
 
 /**
  * CLI Service with injected dependencies for testability
@@ -52,6 +53,7 @@ export class CLIService {
     this.setupCompileCommand();
     this.setupDeployCommand();
     this.setupUtilityCommands();
+    this.setupMcpCommands();
   }
 
   /**
@@ -340,6 +342,14 @@ export class CLIService {
     }
 
     await this.program.parseAsync(argv);
+  }
+
+  /**
+   * Setup MCP commands
+   */
+  setupMcpCommands() {
+    const mcpCommand = createMcpCommands();
+    this.program.addCommand(mcpCommand);
   }
 
   /**

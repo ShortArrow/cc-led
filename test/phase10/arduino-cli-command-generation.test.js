@@ -12,8 +12,98 @@
 
 import { test, expect } from 'vitest';
 import { ArduinoService } from '../../src/arduino.js';
-import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
-import { MockProcessExecutorAdapter } from '../adapters/mock-process-executor.adapter.js';
+
+// Mock adapters defined inline
+class MockFileSystemAdapter {
+  constructor() {
+    this.existsSyncBehavior = () => false;
+  }
+
+  setExistsSyncBehavior(behavior) {
+    this.existsSyncBehavior = behavior;
+  }
+
+  existsSync(path) {
+    return this.existsSyncBehavior(path);
+  }
+}
+
+class MockProcessExecutorAdapter {
+  constructor() {
+    this.commands = [];
+    this.responses = new Map();
+    this.spawnBehavior = null;
+  }
+
+  setResponse(command, response) {
+    this.responses.set(command, response);
+  }
+
+  setSpawnBehavior(behavior) {
+    this.spawnBehavior = behavior;
+  }
+
+  async exec(command, args, options = {}) {
+    const fullCommand = `${command} ${args.join(' ')}`;
+    this.commands.push({ command, args, options, fullCommand });
+    
+    const response = this.responses.get(fullCommand) || { stdout: '', stderr: '', code: 0 };
+    return response;
+  }
+
+  spawn(command, args, options = {}) {
+    this.commands.push({ command, args, options });
+    if (this.spawnBehavior) {
+      return this.spawnBehavior(command, args, options);
+    }
+    return this.createSuccessSpawn('', '')();
+  }
+
+  createSuccessSpawn(stdout, stderr) {
+    return () => ({
+      stdout: { 
+        on: (event, callback) => { 
+          if (event === 'data') callback(stdout); 
+        } 
+      },
+      stderr: { 
+        on: (event, callback) => { 
+          if (event === 'data') callback(stderr); 
+        } 
+      },
+      on: (event, callback) => { 
+        if (event === 'close') callback(0); 
+      }
+    });
+  }
+
+  createErrorSpawn(code, stderr = '') {
+    return () => ({
+      stdout: { on: () => {} },
+      stderr: { 
+        on: (event, callback) => { 
+          if (event === 'data') callback(stderr); 
+        } 
+      },
+      on: (event, callback) => { 
+        if (event === 'close') callback(code); 
+      }
+    });
+  }
+
+  getExecutedCommands() {
+    return this.commands;
+  }
+
+  getSpawnCalls() {
+    return this.commands;
+  }
+
+  reset() {
+    this.commands = [];
+    this.responses.clear();
+  }
+}
 
 test('A2-001: --board xiao-rp2040 generates correct FQBN for compile', async () => {
   // Create isolated test dependencies

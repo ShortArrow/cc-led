@@ -160,11 +160,74 @@ export class LedController {
   }
 
   /**
+   * Get hardware version information
+   * @returns {object} Version information from hardware
+   */
+  async getVersion() {
+    return new Promise((resolve, reject) => {
+      if (!this.serialPort || !this.serialPort.isOpen) {
+        reject(new Error('Serial port is not open. Call connect() first.'));
+        return;
+      }
+
+      console.log('Requesting hardware version...');
+      
+      let responseReceived = false;
+      const responseTimeout = setTimeout(() => {
+        if (!responseReceived) {
+          console.log('No version response from device (timeout)');
+          resolve({ version: 'unknown', error: 'timeout' });
+        }
+      }, 2000);
+      
+      const responseHandler = (data) => {
+        const response = data.toString().trim();
+        if (response.startsWith('VERSION,')) {
+          responseReceived = true;
+          clearTimeout(responseTimeout);
+          console.log(`Hardware version: ${response}`);
+          
+          // Parse VERSION response
+          const parts = response.split(',');
+          const versionInfo = {
+            version: parts[1] || 'unknown',
+            board: parts[2] || 'unknown',
+            firmware: parts[3] || 'unknown',
+            buildDate: parts[4] || 'unknown'
+          };
+          
+          this.serialPort.off('data', responseHandler);
+          resolve(versionInfo);
+        }
+      };
+      
+      this.serialPort.on('data', responseHandler);
+      
+      this.serialPort.write('VERSION\n', (err) => {
+        if (err) {
+          clearTimeout(responseTimeout);
+          this.serialPort.off('data', responseHandler);
+          reject(new Error(`Failed to send VERSION command: ${err.message}`));
+        }
+      });
+    });
+  }
+
+  /**
    * Parse color input to RGB string
    * @param {string} color - Color name or RGB string
    * @returns {string} RGB string
    */
   parseColor(color) {
+    // Check if it's a hex color format (#RRGGBB)
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      const hex = color.substring(1);
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `${r},${g},${b}`;
+    }
+    
     // Check if it's a predefined color
     const lowerColor = color.toLowerCase();
     if (COLORS[lowerColor]) {
@@ -181,7 +244,7 @@ export class LedController {
       throw new Error(`Invalid color: ${color}. RGB values must be between 0 and 255`);
     }
     
-    throw new Error(`Invalid color: ${color}. Use a color name (red, green, blue, etc.) or RGB format (255,0,0)`);
+    throw new Error(`Invalid color: ${color}. Use a color name (red, green, blue, etc.), hex format (#FF0000), or RGB format (255,0,0)`);
   }
 }
 
