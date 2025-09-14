@@ -18,4 +18,8 @@ export class ILedController {
   async isLedAvailable(ledNumber) {
     throw new Error('Method isLedAvailable() must be implemented');
   }
+
+  async getHardwareVersion() {
+    throw new Error('Method getHardwareVersion() must be implemented');
+  }
 }

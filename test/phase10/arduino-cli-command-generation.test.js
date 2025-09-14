@@ -255,12 +255,13 @@ test('A2-005: Build directory path generation uses working directory', async () 
   expect(call.command).toBe('arduino-cli');
   expect(call.args).toEqual(expect.arrayContaining([
     'compile',
-    '--libraries'
+    '--fqbn',
+    'rp2040:rp2040:seeed_xiao_rp2040'
   ]));
-  // Libraries path should contain common directory
-  const librariesIndex = call.args.indexOf('--libraries');
-  const librariesPath = call.args[librariesIndex + 1];
-  expect(librariesPath).toContain('common');
+  // Should not include --libraries flag (removed in implementation)
+  expect(call.args).not.toContain('--libraries');
+  // Should include build flags and export-binaries
+  expect(call.args).toEqual(expect.arrayContaining(['--build-property', '--export-binaries']));
 });
 
 test('A2-006: Config file parameter included in all Arduino CLI commands', async () => {

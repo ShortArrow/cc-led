@@ -80,6 +80,14 @@ void SerialCommandHandler::processCommand(const String& cmd) {
         led->startRainbow(interval);
       }
     }
+    // VERSION command doesn't need LED action - just return the response
+    else if (cmd == "VERSION") {
+      // Response already handled by CommandProcessor
+    }
+    // DEBUG command for testing
+    else if (cmd == "DEBUG") {
+      // Response already handled by CommandProcessor
+    }
   }
   
   // Send response using CommandProcessor output

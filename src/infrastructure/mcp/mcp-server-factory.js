@@ -7,6 +7,7 @@ import { ListAvailableLedsUseCase } from '../../application/mcp/use-cases/list-a
 import { GetLedStatusUseCase } from '../../application/mcp/use-cases/get-led-status.use-case.js';
 import { GetVersionUseCase } from '../../application/mcp/use-cases/get-version.use-case.js';
 import { LedMappingService } from '../../application/mcp/services/led-mapping.service.js';
+import { LedControllerImpl } from './led-controller-impl.js';
 
 export class McpServerFactory {
   static create(config = {}) {
@@ -17,18 +18,17 @@ export class McpServerFactory {
       ledController = null
     } = config;
 
-    if (!ledController) {
-      throw new Error('LED controller is required');
-    }
+    // Create default LED controller if none provided
+    const controller = ledController || new LedControllerImpl();
 
     // Create services
     const ledMapping = new LedMappingService();
     
     // Create use cases
-    const controlLedUseCase = new ControlLedUseCase(ledController, ledMapping);
-    const listLedsUseCase = new ListAvailableLedsUseCase(ledController, ledMapping);
-    const getLedStatusUseCase = new GetLedStatusUseCase(ledController, ledMapping);
-    const getVersionUseCase = new GetVersionUseCase(ledController);
+    const controlLedUseCase = new ControlLedUseCase(controller, ledMapping);
+    const listLedsUseCase = new ListAvailableLedsUseCase(controller, ledMapping);
+    const getLedStatusUseCase = new GetLedStatusUseCase(controller, ledMapping);
+    const getVersionUseCase = new GetVersionUseCase(controller);
     
     // Create request handler
     const requestHandler = new McpRequestHandlerService(

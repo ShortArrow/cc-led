@@ -260,8 +260,15 @@ export async function executeCommand(options) {
   try {
     await controller.connect();
     
-    // Command priority: on/off > blink > rainbow > color
-    if (options.on) {
+    // Command priority: version > on/off > blink > rainbow > color
+    if (options.firmwareVersion || options['firmware-version']) {
+      const versionInfo = await controller.getVersion();
+      if (versionInfo.error === 'timeout') {
+        console.log('Hardware version: unknown (no response from device)');
+      } else {
+        console.log(`Hardware: ${versionInfo.board} | Firmware: ${versionInfo.firmware} v${versionInfo.version} | Build: ${versionInfo.buildDate}`);
+      }
+    } else if (options.on) {
       await controller.turnOn();
     } else if (options.off) {
       await controller.turnOff();
@@ -282,7 +289,7 @@ export async function executeCommand(options) {
     } else if (options.color) {
       await controller.setColor(options.color);
     } else {
-      throw new Error('No action specified. Use --on, --off, --color, --blink, or --rainbow');
+      throw new Error('No action specified. Use --version, --on, --off, --color, --blink, or --rainbow');
     }
   } finally {
     await controller.disconnect();
