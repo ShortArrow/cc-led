@@ -7,6 +7,7 @@
 
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 import { NodeFileSystemAdapter } from './adapters/node-file-system.adapter.js';
 import { NodeProcessExecutorAdapter } from './adapters/node-process-executor.adapter.js';
 import { loadConfig, getSerialPort } from './utils/config.js';
@@ -77,6 +78,32 @@ export class ArduinoService {
       throw new Error(`Arduino CLI config file not found: ${cliConfigFile}`);
     }
     return cliConfigFile;
+  }
+
+  /**
+   * Get build flags with version information using cc-led info command
+   * @param {string} boardType - Board type identifier
+   * @returns {string} Build flags for Arduino CLI
+   */
+  getBuildFlags(boardType = 'unknown') {
+    try {
+      // Use cc-led info command to get build flags
+      const cliPath = join(this.packageRoot, 'src', 'cli.js');
+      const buildFlags = execSync(
+        `node "${cliPath}" info --build-flags --board ${boardType}`,
+        { 
+          encoding: 'utf-8',
+          cwd: this.packageRoot,
+          stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
+        }
+      ).trim();
+      return buildFlags;
+    } catch (error) {
+      console.warn('Warning: Could not generate build flags with version info:', error.message);
+      // Return fallback flags
+      const fallbackDate = new Date().toISOString().split('T')[0];
+      return `-DFIRMWARE_VERSION=\\"1.0.0-unknown\\" -DFIRMWARE_BOARD=\\"${boardType}\\" -DFIRMWARE_NAME=\\"UniversalLedControl\\" -DFIRMWARE_BUILD_DATE=\\"${fallbackDate}\\"`;
+    }
   }
 
   /**
@@ -200,7 +227,19 @@ board_manager:
     
     // Add common library path for sketches that need it
     const commonLibPath = join(this.packageRoot, 'sketches', 'common');
-    const args = ['compile', '--fqbn', board.fqbn || this.fqbn, '--libraries', commonLibPath, sketchPath];
+    
+    // Get version information build flags
+    const boardType = board?.id || 'unknown';
+    const buildFlags = this.getBuildFlags(boardType);
+    
+    const args = [
+      'compile', 
+      '--fqbn', board.fqbn || this.fqbn,
+      '--build-property', `build.extra_flags="${buildFlags}"`,
+      '--export-binaries',
+      sketchPath
+    ];
+    
     return this.execute(args, logLevel);
   }
 
@@ -227,7 +266,18 @@ board_manager:
     
     // Add common library path for sketches that need it
     const commonLibPath = join(this.packageRoot, 'sketches', 'common');
-    const args = ['upload', '--fqbn', board.fqbn || this.fqbn, '--libraries', commonLibPath, '--port', port, sketchPath];
+    
+    // Get version information build flags
+    const boardType = board?.id || 'unknown';
+    const buildFlags = this.getBuildFlags(boardType);
+    
+    const args = [
+      'upload', 
+      '--fqbn', board.fqbn || this.fqbn,
+      '--port', port, 
+      sketchPath
+    ];
+    
     return this.execute(args, logLevel);
   }
 

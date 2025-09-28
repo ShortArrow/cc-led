@@ -12,8 +12,68 @@
 
 import { test, expect } from 'vitest';
 import { ConfigService, setConfigService, resetConfigService } from '../../src/utils/config.js';
-import { MockFileSystemAdapter } from '../adapters/mock-file-system.adapter.js';
-import { MockConfigAdapter } from '../adapters/mock-config.adapter.js';
+
+// Mock adapters defined inline
+class MockFileSystemAdapter {
+  constructor() {
+    this.files = new Map();
+    this.existsSyncBehavior = (path) => this.files.has(path);
+  }
+
+  setFile(path, content) {
+    this.files.set(path, content);
+  }
+
+  setExistsSyncBehavior(behavior) {
+    this.existsSyncBehavior = behavior;
+  }
+
+  existsSync(path) {
+    return this.existsSyncBehavior(path);
+  }
+
+  readFileSync(path) {
+    if (!this.files.has(path)) {
+      throw new Error(`File not found: ${path}`);
+    }
+    return this.files.get(path);
+  }
+}
+
+class MockConfigAdapter {
+  constructor() {
+    this.env = {};
+    this.loadDotenvBehavior = null;
+  }
+
+  setEnv(key, value) {
+    this.env[key] = value;
+  }
+
+  getEnv(key, defaultValue) {
+    return this.env[key] || defaultValue;
+  }
+
+  setLoadDotenvBehavior(behavior) {
+    this.loadDotenvBehavior = behavior;
+  }
+
+  loadDotenv(options) {
+    if (this.loadDotenvBehavior) {
+      return this.loadDotenvBehavior(options);
+    }
+    return {};
+  }
+
+  clearEnv() {
+    this.env = {};
+  }
+
+  reset() {
+    this.env = {};
+    this.loadDotenvBehavior = null;
+  }
+}
 
 test('C1-001: Default config values when .env file is not present', () => {
   // Create isolated test dependencies

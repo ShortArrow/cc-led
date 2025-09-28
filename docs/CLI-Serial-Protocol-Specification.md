@@ -28,16 +28,22 @@
 | `--color red` | `COLOR,255,0,0\n` | Solid red color |
 | `--blink` | `BLINK1,255,255,255,500\n` | White blink (500ms) |
 | `--rainbow` | `RAINBOW,50\n` | Rainbow effect (50ms) |
+| `--firmware-version` | `VERSION\n` | *(Hardware version inquiry)* |
 
 **💡 Common Patterns:**
 
 - `cc-led led --port COM3 --color blue` → Blue LED
 - `cc-led led --port COM3 --blink red --interval 1000` → Red blink every 1s
 - `cc-led led --port COM3 --rainbow --interval 30` → Fast rainbow
+- `cc-led led --port COM3 --firmware-version` → Hardware version info
+- `cc-led info` → Comprehensive project information
+- `cc-led info --version-git` → Git version information
+- `cc-led --version` → CLI tool version (legacy, use `cc-led info`)
 
 **🔧 Board Transparency:**
 
 The LED control protocol is board-agnostic. All boards use the same command format:
+
 - **No `--board` option needed** for LED commands
 - **Universal protocol**: Board firmware adapts commands to available LED capabilities
 - **Same commands**: Work across XIAO RP2040, Arduino Uno R4, Raspberry Pi Pico
@@ -150,6 +156,128 @@ cc-led led --port COM3 --rainbow                 # → RAINBOW,50\n
 cc-led led --port COM3 --rainbow --interval 100  # → RAINBOW,100\n
 ```
 
+### 🔍 Version and Information Commands
+
+#### CLI --version Command (Legacy)
+
+- **CLI Option**: `--version [git|package]`
+- **Default**: `package` (uses package.json version)
+- **Arguments**:
+  - `git`: Display Git version information (tag or commit hash)
+  - `package`: Display package.json version (default)
+- **Purpose**: CLI tool version information (maintained for backward compatibility)
+- **Status**: ⚠️ **Legacy** - Consider using `cc-led info` for comprehensive information
+- **Output Examples**:
+  - `cc-led --version` → `v0.0.5-pre` (package.json version)
+  - `cc-led --version package` → `v0.0.5-pre` (explicit package.json version)
+  - `cc-led --version git` → `f35820e-dirty` (Git version: tag or commit hash)
+
+#### cc-led info Command
+
+- **CLI Command**: `cc-led info [options]`
+- **Purpose**: Comprehensive project and version information management
+- **Default Behavior**: Display all available information in human-readable format
+- **Compatible with**: All development workflows, Arduino build process, CI/CD pipelines
+
+**🎯 Command Options:**
+
+| Option | Description | Output Example |
+|--------|-------------|----------------|
+| *(no options)* | Display all project information | Multi-line formatted output |
+| `--version-git` | Git version information only | `f35820e-dirty` |
+| `--version-package` | Package.json version only | `v0.0.5-pre` |
+| `--build-flags` | Arduino build flags format | `-DFIRMWARE_VERSION=\"f35820e-dirty\" ...` |
+| `--json` | JSON format output | `{"version":"f35820e-dirty", ...}` |
+| `--board <board-id>` | Include board-specific information | Adds board context to output |
+
+**📋 Usage Examples:**
+
+```bash
+# Comprehensive project information (default)
+cc-led info
+# → Project: cc-led
+# → Package Version: v0.0.5-pre
+# → Git Version: f35820e-dirty
+# → Git Commit: f35820e
+# → Git Branch: feature/mcp-integration
+# → Build Date: 2025-09-14
+# → Working Directory: Clean/Dirty
+
+# Get specific version information
+cc-led info --version-git        # → f35820e-dirty
+cc-led info --version-package    # → v0.0.5-pre
+
+# Arduino build integration
+cc-led info --build-flags --board xiao-rp2040
+# → -DFIRMWARE_VERSION=\"f35820e-dirty\" -DFIRMWARE_BOARD=\"xiao-rp2040\" ...
+
+# JSON output for scripting
+cc-led info --json
+# → {"version":"f35820e-dirty","commit":"f35820e","tag":null,...}
+
+# Board-specific information
+cc-led info --board arduino-uno-r4
+# → (includes board-specific context in output)
+```
+
+#### VERSION Command (Hardware)
+
+- **CLI Option**: `--firmware-version`
+- **Serial Output**: `VERSION\n`
+- **Purpose**: Hardware version and capability detection
+- **Response Format**: `VERSION,<version>,<board>,<firmware>,<buildDate>\n`
+- **Usage Context**: CLI hardware version inquiry, MCP server discovery, diagnostic tools
+- **Compatible Boards**: All supported boards
+
+**CLI Usage Examples:**
+
+```bash
+# Get CLI tool version (default: package.json)
+cc-led --version
+# → v0.0.5-pre
+
+# Get CLI tool version explicitly from package.json
+cc-led --version package
+# → v0.0.5-pre
+
+# Get CLI tool version from Git (tag or commit)
+cc-led --version git
+# → f35820e-dirty
+
+# Get hardware version information (firmware version)
+cc-led led --port COM3 --firmware-version
+# → Sent command: VERSION
+# → Device response: VERSION,f35820e-dirty,xiao-rp2040,UniversalLedControl,2025-09-14
+# → Hardware: xiao-rp2040 | Firmware: UniversalLedControl f35820e-dirty | Build: 2025-09-14
+
+# Works on all supported boards
+cc-led led --port COM5 --firmware-version  # Arduino Uno R4
+# → Device response: VERSION,f35820e-dirty,arduino-uno-r4,SerialLedControl,2025-09-14
+```
+
+**Response Format:**
+
+```bash
+# Arduino response format
+VERSION,<version>,<board>,<firmware>,<buildDate>\n
+
+# Response components:
+# - version: Firmware version (1.0.0)
+# - board: Target board identifier (xiao-rp2040, arduino-uno-r4, etc.)  
+# - firmware: Sketch name (UniversalLedControl, SerialLedControl, etc.)
+# - buildDate: Compilation date (2025-01-13)
+```
+
+**Implementation Notes:**
+
+- VERSION command available in both CLI and system-level usage
+- Timeout handling: 2 seconds, returns "unknown" on no response
+- CLI displays parsed hardware information in user-friendly format
+- Board compatibility: All supported boards should respond
+- Version information is injected at Arduino build time using Git tags/commits
+- If Git tag exists: uses tag as version, otherwise uses commit hash format
+- Build process automatically includes: version, board ID, firmware name, and build date
+
 ---
 
 ## 🔄 Command Priority Logic
@@ -160,15 +288,20 @@ When multiple options are specified simultaneously, commands follow this priorit
 
 | Priority | Command Type | Behavior |
 |----------|--------------|----------|
-| 1️⃣ **Highest** | `--on` / `--off` | Power control overrides all other commands |
-| 2️⃣ **High** | `--blink` | Blinking effects (BLINK1/BLINK2) |
-| 3️⃣ **Medium** | `--rainbow` | Rainbow effects |
-| 4️⃣ **Lowest** | `--color` | Static color setting |
+| 1️⃣ **Highest** | `--firmware-version` | Hardware version inquiry (overrides all display commands) |
+| 2️⃣ **High** | `--on` / `--off` | Power control overrides all LED display commands |
+| 3️⃣ **Medium** | `--blink` | Blinking effects (BLINK1/BLINK2) |
+| 4️⃣ **Low** | `--rainbow` | Rainbow effects |
+| 5️⃣ **Lowest** | `--color` | Static color setting |
 
 ### 💡 Priority Examples
 
 ```bash
-# Power control wins
+# Firmware version inquiry has highest priority
+cc-led led --port COM3 --firmware-version --color red --blink blue
+# → VERSION\n (firmware version takes priority)
+
+# Power control wins over LED effects
 cc-led led --port COM3 --on --color red --blink blue
 # → ON\n (ON takes priority)
 
@@ -542,6 +675,7 @@ cc-led --port COM3 --color red
 - **[📖 README.md](../README.md)** - Project overview and quick start guide
 - **[🔧 CONTRIBUTING.md](CONTRIBUTING.md)** - Adding new boards and sketches
 - **[🎨 CLAUDE_CODE_HOOKS.md](CLAUDE_CODE_HOOKS.md)** - Claude Code integration examples
+- **[📋 GIT-VERSION-INTEGRATION.md](GIT-VERSION-INTEGRATION.md)** - Git version information integration (now handled by `cc-led info`)
 
 ### 🧪 Testing Documentation  
 
@@ -554,6 +688,7 @@ cc-led --port COM3 --color red
 ### 💻 Implementation Reference
 
 - **[🎛️ controller.js](../src/controller.js)** - Core protocol implementation
+- **[📋 cli-service.js](../src/cli-service.js)** - CLI service with `info` command implementation
 - **[📋 Board Configurations](../sketches/)** - Board-specific settings and sketches
 
 ### 🔧 Tools & Development
@@ -567,11 +702,12 @@ cc-led --port COM3 --color red
 
 | Field | Value |
 |-------|--------|
-| **Version** | 0.0.4-pre |
-| **Last Updated** | 2025-09-03 |
-| **Scope** | CLI option processing, serial communication protocol, response processing |
+| **Version** | 0.0.5-pre |
+| **Last Updated** | 2025-09-14 |
+| **Scope** | CLI option processing, serial communication protocol, response processing, info command |
 | **Test Coverage** | ✅ Comprehensive test suite with 100% scenario coverage |
-| **Validation Status** | ✅ Verified against implementation in `src/controller.js` |
+| **Validation Status** | ✅ Verified against implementation in `src/controller.js` and `src/cli-service.js` |
+| **Recent Changes** | Added `cc-led info` command, marked `--version` as legacy, improved version management |
 
 ---
 

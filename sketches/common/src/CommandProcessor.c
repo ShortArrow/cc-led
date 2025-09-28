@@ -204,6 +204,33 @@ void processCommand(const char* cmd, CommandResponse* response) {
                     "REJECT,%s,invalid interval", cmd);
         }
     }
+    // VERSION command
+    else if (strcmp(cmd, "VERSION") == 0) {
+        response->result = COMMAND_ACCEPTED;
+        
+        // Use build-time defined version information or fallbacks
+        #ifndef FIRMWARE_VERSION
+        #define FIRMWARE_VERSION "1.0.0"
+        #endif
+        #ifndef FIRMWARE_BOARD
+        #define FIRMWARE_BOARD "unknown"
+        #endif
+        #ifndef FIRMWARE_NAME
+        #define FIRMWARE_NAME "UniversalLedControl"
+        #endif
+        #ifndef FIRMWARE_BUILD_DATE
+        #define FIRMWARE_BUILD_DATE "unknown"
+        #endif
+        
+        snprintf(response->response, sizeof(response->response), 
+                "VERSION,%s,%s,%s,%s", 
+                FIRMWARE_VERSION, FIRMWARE_BOARD, FIRMWARE_NAME, FIRMWARE_BUILD_DATE);
+    }
+    // DEBUG command for testing
+    else if (strcmp(cmd, "DEBUG") == 0) {
+        response->result = COMMAND_ACCEPTED;
+        strcpy(response->response, "DEBUG,test_response_ok");
+    }
     // Unknown command
     else {
         response->result = COMMAND_REJECTED;

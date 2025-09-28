@@ -164,6 +164,33 @@ void test_U1_017_EmptyStringHandling(void) {
     TEST_ASSERT_EQUAL_STRING("REJECT,,unknown command", response.response);
 }
 
+// U1-018: VERSION command processing
+void test_U1_018_VersionCommand(void) {
+    CommandResponse response;
+    processCommand("VERSION", &response);
+    
+    TEST_ASSERT_EQUAL(COMMAND_ACCEPTED, response.result);
+    // Check that response starts with "VERSION," and contains expected format
+    TEST_ASSERT_TRUE(strstr(response.response, "VERSION,") == response.response);
+    // Should contain 4 components: version,board,firmware,buildDate
+    int commaCount = 0;
+    for (char* p = response.response; *p; p++) {
+        if (*p == ',') commaCount++;
+    }
+    TEST_ASSERT_EQUAL(4, commaCount);
+}
+
+// U1-019: VERSION command with default macros
+void test_U1_019_VersionCommandDefaultMacros(void) {
+    CommandResponse response;
+    processCommand("VERSION", &response);
+    
+    // Should contain default values when no build-time macros are defined
+    TEST_ASSERT_TRUE(strstr(response.response, "VERSION,1.0.0") != NULL ||
+                     strstr(response.response, "FIRMWARE_VERSION") != NULL);
+    TEST_ASSERT_TRUE(strstr(response.response, "UniversalLedControl") != NULL);
+}
+
 // Main test runner
 int main(void) {
     UNITY_BEGIN();
@@ -194,6 +221,10 @@ int main(void) {
     // Error Handling (U1-016, U1-017)
     RUN_TEST(test_U1_016_UnknownCommandHandling);
     RUN_TEST(test_U1_017_EmptyStringHandling);
+    
+    // VERSION Command (U1-018, U1-019)
+    RUN_TEST(test_U1_018_VersionCommand);
+    RUN_TEST(test_U1_019_VersionCommandDefaultMacros);
     
     return UNITY_END();
 }

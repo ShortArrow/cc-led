@@ -35,6 +35,7 @@ cc-led/                     # NPM package root (can be installed globally)
 ```
 
 **Requirements**:
+
 - Support for new boards without modifying existing code
 - Board-specific configurations (FQBN, libraries, LED specs) managed via JSON
 - Separate sketch management per board
@@ -60,6 +61,7 @@ class XiaoRP2040Board extends BaseBoard {
 ### 3. Universal Command Processing Architecture (NEW)
 
 **Command Processing Pipeline**:
+
 ```c
 // sketches/common/src/CommandProcessor.h
 bool parseColorCommand(const char* cmd, uint8_t* r, uint8_t* g, uint8_t* b);
@@ -71,6 +73,7 @@ void processCommand(const char* cmd, CommandResponse* response);
 ```
 
 **Integration with SerialCommandHandler**:
+
 ```cpp
 void SerialCommandHandler::processCommand(const String& cmd) {
   CommandResponse response;
@@ -83,6 +86,7 @@ void SerialCommandHandler::processCommand(const String& cmd) {
 ```
 
 **Requirements**:
+
 - Pure C implementation for Arduino compatibility
 - Arduino-independent unit testing with gcc/g++
 - Comprehensive test coverage (17 Unity test cases)
@@ -116,6 +120,7 @@ void SerialCommandHandler::processCommand(const String& cmd) {
 ### 6. Configuration Management
 
 #### 6.1 Serial Port Priority
+
 **Priority**: Command line args > Environment variables > .env file
 
 ```bash
@@ -130,9 +135,11 @@ echo "SERIAL_PORT=COM3" > .env
 ```
 
 #### 6.2 Arduino CLI Configuration File Priority (NEW)
+
 **Priority**: CLI parameter > Current directory > Auto-generation
 
 **Requirements**:
+
 - `--config-file <path>`: Explicit user specification (highest priority)
 - `./arduino-cli.yaml`: Project-specific configuration (priority 2)  
 - Auto-generated config: Default configuration in current directory (fallback)
@@ -149,10 +156,110 @@ cc-led install  # Creates arduino-cli.yaml in current directory
 ```
 
 **Implementation Requirements**:
+
 - Deterministic configuration file resolution
 - Debug-level logging of selected config file path
 - Error handling for missing or invalid config files
 - Independent config per working directory (isolation)
+
+## 🔗 MCP Integration Requirements
+
+### 6. Model Context Protocol (MCP) Server
+
+**Purpose**: Enable external AI applications (like Claude Desktop) to control Arduino LEDs through standardized protocol.
+
+#### 6.1 MCP Server Architecture
+
+```text
+External AI App (Claude)
+    ↓ MCP Protocol 
+MCP Server (cc-led)
+    ↓ Serial Commands
+Arduino Hardware
+```
+
+**Core Requirements**:
+
+- **Transport Support**: stdio and websocket communication protocols
+- **Tool Registration**: Dynamic tool discovery via MCP protocol
+- **Command Conversion**: Transform MCP parameters to Arduino serial commands
+- **Version Management**: Report server and hardware version information
+
+#### 6.2 MCP Command Interface
+
+| MCP Tool | Parameters | Arduino Command | Purpose |
+|----------|------------|-----------------|---------|
+| `controlLed` | `ledNumber, action, color, brightness, interval` | `ON/OFF/COLOR/BLINK/RAINBOW` | LED control |
+| `getLedStatus` | `ledNumber` | *(query only)* | Status inquiry |
+| `listAvailableLeds` | *(none)* | *(mapping only)* | LED discovery |
+| `getVersion` | `target` | `VERSION` (hardware only) | Version info |
+
+**Parameter Transformation Requirements**:
+
+- **Color Conversion**: `#RRGGBB` → `R,G,B` (0-255 range)
+- **Action Mapping**: `on/off/blink/rainbow` → Arduino commands
+- **Interval Validation**: 50-5000ms range for blink/rainbow timing
+- **LED Mapping**: Virtual LED numbers → physical serial ports
+
+#### 6.3 MCP Protocol Compliance
+
+**Protocol Version**: MCP 2025-06-18 specification
+**Required Capabilities**:
+
+- ✅ Tool listing and schema validation
+- ✅ Error handling with proper MCP error codes
+- ✅ Request/response correlation with ID tracking
+- ✅ Graceful timeout handling (2 seconds for hardware commands)
+
+**Error Response Format**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32601,
+    "message": "Method not found: invalidMethod"
+  }
+}
+```
+
+#### 6.4 Environment Configuration
+
+**LED Mapping Configuration**:
+
+```bash
+# .env.mcp or environment variables
+LED_1_PORT=COM4
+LED_1_NAME=RGB LED
+LED_2_PORT=COM6  
+LED_2_NAME=Single Color LED
+MCP_TRANSPORT=stdio
+```
+
+**Configuration Requirements**:
+
+- Support for up to 100 virtual LED mappings
+- Environment variable fallback hierarchy
+- Transport protocol selection (stdio/websocket)
+- Port abstraction for hardware independence
+
+#### 6.5 Integration Testing
+
+**MCP Server Validation**:
+
+- ✅ Server startup and protocol initialization
+- ✅ Tool registration and schema compliance
+- ✅ Command conversion accuracy (24 test cases)
+- ✅ Hardware communication integration
+- ✅ Error handling and timeout management
+
+**Claude Desktop Integration**:
+
+- Configuration file validation
+- Real-time command execution
+- Multi-LED control scenarios
+- Version information retrieval
 
 ## 🔧 Technical Requirements
 
@@ -167,6 +274,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 ```
 
 **Required Behavior**:
+
 1. **Package Resolution**: CLI must locate board files in package installation directory
 2. **Environment Creation**: `.arduino/` and `arduino-cli.yaml` created in `/home/user/my-project/`
 3. **Sketch Access**: Read sketch from package bundled location (read-only)
@@ -211,6 +319,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 ```
 
 **Global Installation Support**:
+
 - Can be installed with `npm install -g cc-led`
 - Works with `npx cc-led` without installation
 - Development with `npm link` for testing
@@ -218,6 +327,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 ### 9. Arduino CLI Integration
 
 **Requirements**:
+
 - Support Arduino CLI 0.34.0 or higher
 - Local `.arduino` directory package management (Python .venv equivalent)
 - Dynamic `arduino-cli.yaml` generation
@@ -227,11 +337,13 @@ cc-led --board xiao-rp2040 compile LEDBlink
 #### 9.1 Arduino CLI Configuration File Priority
 
 **Priority Order** (highest to lowest):
+
 1. **CLI Parameter**: `--config-file <path>` (explicit user specification)
 2. **Current Directory**: `./arduino-cli.yaml` (project-specific configuration)
 3. **Package Directory**: Package installation directory (default configuration)
 
 **Requirements**:
+
 - If CLI parameter is provided, use specified file exclusively
 - If no CLI parameter, search current directory for `arduino-cli.yaml`
 - If no current directory config found, create default config in current directory
@@ -239,6 +351,7 @@ cc-led --board xiao-rp2040 compile LEDBlink
 - Configuration search must be deterministic and logged for debugging
 
 **Implementation**:
+
 ```javascript
 constructor() {
   // Use package installation directory for board files and sketches
@@ -259,6 +372,7 @@ createLocalConfig() {
 **Purpose**: Control verbosity of both cc-led and Arduino CLI output for debugging
 
 **Supported Log Levels**:
+
 - `trace`: Most verbose - all internal operations
 - `debug`: Detailed debugging information  
 - `info`: General information (default)
@@ -267,6 +381,7 @@ createLocalConfig() {
 - `fatal`: Fatal errors only
 
 **Usage**:
+
 ```bash
 # Future CLI implementation
 cc-led --log-level debug compile LEDBlink
@@ -274,16 +389,19 @@ cc-led --log-level trace upload LEDBlink --port COM3
 ```
 
 **Affected Components**:
+
 - **cc-led CLI**: Controls internal logging (config path selection, command execution details)
 - **Arduino CLI**: Log level is passed through to arduino-cli commands
 
 **Requirements**:
+
 - Log level affects both cc-led internal logging and Arduino CLI output
 - Default log level is `info` when not specified
 - Debug mode displays arduino-cli.yaml path selection and other internal decisions
 - Higher verbosity levels include all lower level messages
 
 **Directory Strategy**:
+
 - **Board files & sketches**: Read from package installation directory (`packageRoot`)
 - **Arduino environment**: Created in user's current working directory (`workingDir`)
 - **Build outputs**: Generated in package's sketch directories
@@ -291,7 +409,8 @@ cc-led --log-level trace upload LEDBlink --port COM3
 ### 10. Global Installation File Path Requirements
 
 #### 10.1 Package Structure (Read-Only)
-```
+
+```text
 /usr/local/lib/node_modules/cc-led/    # Linux/Mac global install
 C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global install
 
@@ -311,7 +430,8 @@ C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global 
 ```
 
 #### 10.2 User Working Directory (Generated)
-```
+
+```text
 /any/user/project/          # User's current working directory
 ├── .arduino/               # Arduino environment (auto-generated)
 │   ├── data/              # Arduino CLI managed
@@ -341,19 +461,22 @@ C:\Users\<user>\AppData\Roaming\npm\node_modules\@cc-led\cli\  # Windows global 
 #### 10.4 Cross-Platform Path Requirements
 
 **Windows**:
-```
+
+```text
 Package: C:\Users\<user>\AppData\Local\Volta\tools\image\node\<version>\node_modules\@cc-led\cli\
 Working: C:\Users\<user>\Projects\my-project\
 ```
 
 **Linux/Mac**:
-```
+
+```text
 Package: /usr/local/lib/node_modules/cc-led/
 Working: /home/<user>/projects/my-project/
 ```
 
 **Development (npm link)**:
-```
+
+```text
 Package: /path/to/cc-led/
 Working: /any/directory/
 ```
@@ -361,27 +484,32 @@ Working: /any/directory/
 #### 10.5 File System Operation Requirements
 
 **Package Files (Read-Only)**:
+
 - All files under `packageRoot` must be treated as read-only
 - No modification of bundled board configurations or sketches
 - Version control does not track generated files
 
 **Working Directory Files (Generated)**:
+
 - `.arduino/` directory: Full read/write access required
 - `arduino-cli.yaml`: Auto-generated per project, can be overwritten
 - `.build/` directory: Build artifacts with full read/write access
 
 **Security Requirements**:
+
 - No file operations outside package and working directory
 - No modification of system-wide Arduino CLI configuration
 - User-level permissions only (no sudo/admin required)
 
 **Cleanup Requirements**:
+
 - `.arduino/`, `.build/`, and `arduino-cli.yaml` can be safely deleted
 - Package files remain untouched after uninstall
 - No global state modification
 - Recommend adding `.arduino/`, `.build/`, and `arduino-cli.yaml` to `.gitignore`
 
 **Environment Isolation Requirements**:
+
 - Each working directory gets independent Arduino environment
 - Multiple projects can use different board platforms simultaneously
 - No interference between different project Arduino setups
@@ -390,6 +518,7 @@ Working: /any/directory/
 #### 10.6 Implementation Requirements
 
 **Path Resolution Implementation**:
+
 ```javascript
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -408,6 +537,7 @@ class ArduinoCLI {
 ```
 
 **Critical Requirements**:
+
 - Must use `import.meta.url` and `fileURLToPath` for ESM compatibility
 - Package root resolution must work in all npm installation scenarios
 - Working directory must be resolved at runtime, not import time
@@ -491,6 +621,7 @@ npm test:coverage  # Coverage measurement
 ```
 
 **Test Coverage**:
+
 - Arduino CLI execution mocking
 - Board configuration loading and validation
 - Environment variable priority
@@ -499,6 +630,7 @@ npm test:coverage  # Coverage measurement
 ### 2. Integration Testing
 
 **Required Test Cases**:
+
 - [ ] `LEDBlink` sketch compilation and upload success
 - [ ] LED lighting verification for each board
 - [ ] Serial communication control verification

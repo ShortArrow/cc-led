@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "cc-led": {
+      "command": "node",
+      "args": ["src/cli.js", "mcp", "start", "--transport", "stdio"],
+      "env": {
+        "LED_1_PORT": "COM4",
+        "LED_1_NAME": "Main RGB LED",
+        "LED_2_PORT": "/dev/ttyUSB0",
+        "LED_2_NAME": "Secondary LED",
+        "MCP_TRANSPORT": "stdio",
+        "MCP_LOG_LEVEL": "info"
+      }
+    }
+  }
+}

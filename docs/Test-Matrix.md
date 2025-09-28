@@ -1,7 +1,7 @@
-# CLI-Serial Protocol Test Matrix
+# CLI-Serial Protocol & MCP Test Matrix
 
 > **Complete test specification and validation matrix for cc-led protocol implementation**  
-> **Total: 121 test cases across 12 phases**
+> **Total: 135+ test cases across 14 phases (includes MCP integration)**
 
 ## Table of Contents
 
@@ -19,7 +19,9 @@
 12. [Phase 10: Arduino CLI Command Generation Tests](#phase-10-arduino-cli-command-generation-tests)
 13. [Phase 11: Arduino Command Processing Tests](#phase-11-arduino-command-processing-tests)
 14. [Phase 12: Arduino CLI Configuration Priority Tests](#phase-12-arduino-cli-configuration-priority-tests)
-15. [Related Documentation](#related-documentation)
+15. [Phase 13: MCP Integration Tests](#phase-13-mcp-integration-tests)
+16. [Phase 14: MCP Command Conversion Tests](#phase-14-mcp-command-conversion-tests)
+17. [Related Documentation](#related-documentation)
 
 ---
 
@@ -36,13 +38,19 @@ The current test suite provides comprehensive coverage for:
 - ✅ **Command Priority**: Conflict resolution and precedence handling
 - ✅ **Response Processing**: ACCEPTED/REJECT/timeout response handling
 
-# Integration & System (Phases 6-10)
+# Integration & System (Phases 6-12)
 - ✅ **Performance Testing**: Response time and memory leak validation
 - ✅ **Arduino CLI Integration**: Command execution and parameter passing
 - ✅ **Configuration Management**: Environment variables and .env file priority
 - ✅ **End-to-End CLI**: Argument parsing and command flow validation
 - ✅ **Command Generation**: Full Arduino CLI command transformation
 - ✅ **Arduino Command Processing**: Microcontroller-side parsing and response generation
+
+# MCP Integration (Phases 13-14)
+- ✅ **MCP Protocol**: Server initialization, tool registration, request handling
+- ✅ **Command Conversion**: #RRGGBB→R,G,B conversion, action mapping
+- ✅ **Version Management**: Server/hardware version retrieval
+- ✅ **Error Handling**: MCP error responses and timeout management
 ```
 
 ### 🔄 **Advanced Validation Areas** (Future Implementation)
@@ -87,6 +95,7 @@ These areas require real hardware or advanced testing infrastructure:
 ### Dependency Injection Architecture (Clean Architecture Implementation)
 
 #### Interface-Based Mock Strategy
+
 The test suite implements Clean Architecture principles using dependency injection with interfaces:
 
 ```javascript
@@ -110,13 +119,16 @@ test('A1-006: Sketch directory validation using dependency injection', async () 
 ```
 
 #### Mock Management Best Practices
+
 - **Use stateless interface-based mocks**: Each test creates fresh mock instances
 - **Avoid module mocking (`vi.mock()`)** for internal dependencies - leads to state interference
 - **Configure mock behavior per test**: Use adapter methods like `setExistsSyncBehavior()`
 - **Cross-platform compatibility**: Normalize path separators in mock logic
 
 #### Module Mock Usage Guidelines
+
 Module mocks should **only** be used for:
+
 - External dependencies (e.g., `child_process`, `fs` in legacy tests)
 - E2E testing where full system integration is required
 - Third-party libraries that cannot be easily dependency-injected
@@ -134,18 +146,21 @@ vi.mock('../../src/arduino.js'); // This causes test interference
 ### Anti-pattern Avoidance
 
 #### Eliminated Anti-patterns
+
 - **❌ Complex beforeEach/afterEach** - Replaced with per-test dependency injection
 - **❌ Module mock state interference** - Solved with interface-based adapters  
 - **❌ Shared mock state** - Each test creates isolated mock instances
 - **❌ Mock reset brittleness** - No longer needed with stateless design
 
 #### Current Best Practices
+
 - **✅ Self-contained tests**: Each test manages its own dependencies
 - **✅ Predictable mock behavior**: Stateless adapters with per-test configuration
 - **✅ Test independence**: No cross-test state sharing or interference
 - **✅ Clear separation of concerns**: Production vs. test adapters
 
 ### File Structure Priority
+
 - Prefer directory/file separation over nested describe blocks
 - Group related tests in separate files by functionality
 - Use flat test structure for better readability
@@ -154,6 +169,7 @@ vi.mock('../../src/arduino.js'); // This causes test interference
 ### Test Naming Convention
 
 #### Test ID Prefix Definitions
+
 The test ID prefixes indicate the category of testing:
 
 - **P** (Protocol): Core protocol and basic functionality tests
@@ -175,12 +191,14 @@ The test ID prefixes indicate the category of testing:
   - E1-xxx: CLI argument parsing and command execution flow
 
 #### Test ID Format
+
 - Format: `[Prefix][Phase]-[Number]`
 - Example: `P1-001` = Protocol Phase 1, Test 001
 - Include expected behavior in test names
 - Make test names self-documenting
 
 **Test ID Examples:**
+
 ```javascript
 // Protocol test example
 test('P1-001: CLI --on command sends ON\n to serial port', () => {});
@@ -210,6 +228,7 @@ test('E1-002: CLI parses led --blink green --second-color blue', () => {});
 | **P1-005** | CLI | `--rainbow` default | `RAINBOW,50\n` transmission | 🔥 High |
 
 **Test ID Examples:**
+
 ```javascript
 test('P1-001: CLI --on command sends ON\\n to serial port', () => {});
 test('P1-002: CLI --off command sends OFF\\n to serial port', () => {});
@@ -239,12 +258,14 @@ test('P1-002: CLI --off command sends OFF\\n to serial port', () => {});
 | **P2-014** | Interval Boundary | `--blink --interval -100` | Error | Negative value rejection |
 
 **Test ID Examples:**
+
 ```javascript
 test('P2-001: RGB minimum boundary values 0,0,0 should succeed', () => {});
 test('P2-003: R channel over maximum 256,0,0 should throw validation error', () => {});
 ```
 
 **Missing Test Categories:**
+
 - Color format validation with spaces
 - Port parameter validation  
 - Command length limits
@@ -274,11 +295,11 @@ test('P2-003: R channel over maximum 256,0,0 should throw validation error', () 
 | **P3-014** | Port Priority | No port in any source | Error thrown | Descriptive error when port missing |
 
 **Test ID Examples:**
+
 ```javascript
 test('P3-001: --on flag overrides --color red in command priority', () => {});
 test('P3-006: Conflicting color specifications should be handled consistently', () => {});
 ```
-
 
 ---
 
@@ -295,18 +316,19 @@ test('P3-006: Conflicting color specifications should be handled consistently', 
 | **P4-005** | Invalid Response | `STATUS,OK,ready` | Treat as timeout | Invalid response rejection |
 
 **Test ID Examples:**
+
 ```javascript
 test('P4-001: ACCEPTED,ON response displays success message', () => {});
 test('P4-004: No response triggers timeout message', () => {});
 ```
 
 **Additional Response Scenarios:**
+
 - Partial response with incomplete data
 - Response with Unicode characters  
 - Response with multiple commas
 
 ---
-
 
 **Priority: Medium** - Digital LED protocol-specific validation
 
@@ -314,6 +336,7 @@ test('P4-004: No response triggers timeout message', () => {});
 |---------|----------|-----------|-------------------|-----------------|
 
 **Test ID Examples:**
+
 ```javascript
 test('P5-001: Digital board shows color warning and sends command for red', () => {});
 test('P5-002: Digital board with white color shows no warning', () => {});
@@ -333,6 +356,7 @@ test('P5-002: Digital board with white color shows no warning', () => {});
 | **P6-004** | Concurrency | Multiple ports simultaneously | No interference | Parallel processing |
 
 **Test ID Examples:**
+
 ```javascript
 test('P6-001: Response processing completes under 20ms in test environment', () => {});
 test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () => {});
@@ -413,6 +437,7 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **A1-012** | Log Propagation | Log level passed to all commands | Consistent logging | Parameter propagation |
 
 ### Implementation Status: ✅ COMPLETED
+
 - **All 12 tests converted** to interface-based dependency injection
 - **Zero test interference** in full test suite runs  
 - **Cross-platform compatibility** with path normalization
@@ -441,6 +466,7 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **C1-011** | Full Priority | CLI > env var > .env file | Priority order respected | Complete priority chain |
 
 ### Implementation Status: ✅ COMPLETED
+
 - **All 11 tests converted** to interface-based dependency injection
 - **Eliminated C1-006 test interference** with stateless MockConfigAdapter
 - **ConfigService with dependency injection** using FileSystemInterface and ConfigInterface
@@ -465,7 +491,6 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **E1-009** | Rainbow Command | led --rainbow --interval 100 | Rainbow with custom interval | Specialized command parsing |
 | **E1-010** | Multiple Flags | led --on --off --rainbow | Multiple boolean flags handled | Boolean flag parsing |
 
-
 ---
 
 ## Phase 10: Arduino CLI Command Generation Tests
@@ -486,12 +511,14 @@ test('P6-003: 1000 consecutive timeout commands do not cause memory leaks', () =
 | **A2-010** | Command Sequence | `install` then `compile` then `upload` | Correct arduino-cli command sequence with proper parameters | Command chaining validation |
 
 **Test ID Examples:**
+
 ```javascript
 test('A2-001: --board xiao-rp2040 generates correct FQBN for compile', () => {});
 test('A2-007: Sketch path resolution finds correct .ino file', () => {});
 ```
 
 **Critical Arduino CLI Integration Areas:**
+
 - FQBN (Fully Qualified Board Name) mapping from board IDs
 - Port parameter transformation from CLI format to arduino-cli format
 - Log level propagation from cc-led to arduino-cli commands
@@ -519,6 +546,7 @@ test('A2-007: Sketch path resolution finds correct .ino file', () => {});
 | **C2-011** | Logging | Config file selection logged | Debug info shows selected config path | Configuration transparency |
 
 **Test ID Examples:**
+
 ```javascript
 test('C2-001: --config-file parameter overrides all other config sources', async () => {
   // Setup custom config file
@@ -540,17 +568,20 @@ test('C2-007: Config file auto-created in current directory when missing', async
 ```
 
 **Implementation Priority:**
+
 - 🔥 **High**: C2-001, C2-003, C2-005, C2-007 (core priority logic)
 - 🟡 **Medium**: C2-002, C2-004, C2-009, C2-011 (validation and logging)
 - 🟢 **Low**: C2-006, C2-008, C2-010 (edge cases and content validation)
 
 **Configuration Priority System Requirements:**
+
 1. **CLI Parameter** (`--config-file <path>`): Explicit user specification, highest priority
-2. **Current Directory** (`./arduino-cli.yaml`): Project-specific configuration 
+2. **Current Directory** (`./arduino-cli.yaml`): Project-specific configuration
 3. **Package Directory**: Auto-generated default configuration as fallback
 4. **Error Handling**: Clear error messages for missing or invalid config files
 5. **Logging**: Debug-level logging of config file selection process
 6. **Auto-Generation**: Default config created in current directory when no config found
+
 - Sketch path resolution from name to actual .ino file location
 - Board-specific installation commands (platform + libraries)
 - Command parameter consistency across workflow sequences
@@ -558,6 +589,7 @@ test('C2-007: Config file auto-created in current directory when missing', async
 ---
 
 ## Phase 11: Arduino Command Processing Tests
+
 **Priority: Critical** - Microcontroller command processing and response generation validation  
 **Test Framework: Unity (ThrowTheSwitch/Unity)** for C/C++ unit testing
 
@@ -584,6 +616,56 @@ test('C2-007: Config file auto-created in current directory when missing', async
 **Test Framework:** Unity (ThrowTheSwitch/Unity) for C/C++ microcontroller testing.
 **Implementation:** Arduino-independent command processor with response generation.
 **Execution:** See [CI-CD Test Strategy](CI-CD-Test-Strategy.md) for test execution methods.
+
+---
+
+## Phase 13: MCP Integration Tests
+
+**Priority: Critical** - MCP server functionality and protocol compliance validation
+
+| Test ID | Category | Description | Expected Result | Status |
+|---------|----------|-------------|-----------------|--------|
+| **M1-001** | Server Initialization | MCP server startup with stdio transport | Server listening, protocol ready | ✅ |
+| **M1-002** | Tool Registration | getVersion tool registration | Tool visible in tools/list | ✅ |
+| **M1-003** | Tool Registration | controlLed tool registration | Tool visible in tools/list | ✅ |
+| **M1-004** | Tool Registration | getLedStatus tool registration | Tool visible in tools/list | ✅ |
+| **M1-005** | Tool Registration | listAvailableLeds tool registration | Tool visible in tools/list | ✅ |
+| **M1-006** | Version Retrieval | getVersion server target | Git hash, package version returned | ✅ |
+| **M1-007** | Version Retrieval | getVersion hardware target | Hardware info or timeout handled | ✅ |
+| **M1-008** | LED Control | controlLed basic on/off | Command reaches hardware layer | ✅ |
+| **M1-009** | LED Control | controlLed with color parameters | Color conversion applied | ✅ |
+| **M1-010** | LED Control | controlLed with interval parameters | Interval passed to hardware | ✅ |
+
+## Phase 14: MCP Command Conversion Tests
+
+**Priority: Critical** - MCP to hardware command conversion accuracy
+
+| Test ID | Category | Input | Expected Conversion | Status |
+|---------|----------|-------|-------------------|--------|
+| **M2-001** | Color Conversion | `#FF0000` | `255,0,0` | ✅ |
+| **M2-002** | Color Conversion | `#00FF00` | `0,255,0` | ✅ |
+| **M2-003** | Color Conversion | `#0000FF` | `0,0,255` | ✅ |
+| **M2-004** | Color Conversion | `#FFFFFF` | `255,255,255` | ✅ |
+| **M2-005** | Color Conversion | `#000000` | `0,0,0` | ✅ |
+| **M2-006** | Action Mapping | `action: "on"` | `controller.turnOn()` | ✅ |
+| **M2-007** | Action Mapping | `action: "off"` | `controller.turnOff()` | ✅ |
+| **M2-008** | Action Mapping | `action: "blink"` | `controller.blink()` | ✅ |
+| **M2-009** | Action Mapping | `action: "rainbow"` | `controller.rainbow()` | ✅ |
+| **M2-010** | Board Commands | `on + #FF0000` | `COLOR,255,0,0` | ✅ |
+| **M2-011** | Board Commands | `off` | `OFF` | ✅ |
+| **M2-012** | Board Commands | `blink + #00FF00 + 500ms` | `BLINK1,0,255,0,500` | ✅ |
+| **M2-013** | Board Commands | `rainbow + 50ms` | `RAINBOW,50` | ✅ |
+| **M2-014** | Error Handling | Invalid action | MCP error response | ✅ |
+
+**Test Implementation:** `test/application/mcp/mcp-command-conversion-simple.test.js` (24 tests)
+
+**MCP Server Requirements:**
+
+1. **Transport Support**: stdio and websocket protocols
+2. **Tool Schema**: JSON schema validation for all parameters
+3. **Error Handling**: Proper MCP error codes and messages
+4. **Connection Management**: Automatic connect/disconnect for hardware calls
+5. **Parameter Validation**: Range checking for interval, brightness, LED numbers
 
 ---
 

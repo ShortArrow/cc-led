@@ -3,6 +3,7 @@
     "llvm-vs-code-extensions.vscode-clangd",
     "davidanson.vscode-markdownlint",
     "ms-vscode.powershell",
-    "vitest.explorer"
+    "vitest.explorer",
+    "bierner.markdown-mermaid"
   ]
 }

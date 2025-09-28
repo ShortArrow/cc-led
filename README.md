@@ -301,6 +301,48 @@ This design allows each project to have its own isolated Arduino environment, si
 - **Board & Sketch Bundling**: All board configurations and sketches included in package
 - **Development Friendly**: Simple `npm link` for development, comprehensive test coverage
 
+## MCP (Model Context Protocol) Integration
+
+cc-led supports **MCP (Model Context Protocol)** integration, allowing AI assistants like Claude to directly control your Arduino LEDs through a standardized interface.
+
+### Quick MCP Setup
+
+1. **Configure LED mappings** with environment variables:
+   ```bash
+   export LED_1_PORT=COM4
+   export LED_1_NAME="Main RGB LED"
+   export LED_2_PORT=/dev/ttyUSB0  
+   export LED_2_NAME="Secondary LED"
+   ```
+
+2. **Copy MCP configuration** to Claude Code settings:
+   ```bash
+   cp .mcp.json.sample .mcp.json
+   # Edit .mcp.json with your actual LED ports
+   ```
+
+3. **Start MCP server**:
+   ```bash
+   cc-led mcp start --transport stdio
+   ```
+
+4. **Available MCP Tools**:
+   - `controlLed` - Turn LEDs on/off, blink, rainbow effects
+   - `getLedStatus` - Check current LED state  
+   - `listAvailableLeds` - Show configured LEDs
+   - `getVersion` - Server version information
+
+### MCP Usage Examples
+
+Once configured with Claude Code, you can use natural language:
+
+- *"Turn the main LED red"* 
+- *"Make LED 1 blink blue and green every 500ms"*
+- *"Show me rainbow colors on the secondary LED"*
+- *"Turn off all LEDs"*
+
+**→ See [MCP Setup Guide](docs/MCP_SETUP.md)** for complete configuration instructions.
+
 ## Claude Code Hooks Integration
 
 Get visual LED notifications for Claude Code events! Set up your Arduino board to light up when the AI agent starts, stops, or uses tools.
@@ -310,6 +352,8 @@ Get visual LED notifications for Claude Code events! Set up your Arduino board t
 ## 📖 Documentation
 
 - **[CLI-Serial Protocol Specification](docs/CLI-Serial-Protocol-Specification.md)** - Detailed specification of CLI options, serial commands, and response handling
+- **[MCP Setup Guide](docs/MCP_SETUP.md)** - Model Context Protocol integration with Claude Code and other AI assistants
+- **[MCP Specification](docs/MCP_SPEC.md)** - Technical specification of the MCP server implementation
 - **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
 - **[Claude Code Hooks Guide](docs/CLAUDE_CODE_HOOKS.md)** - Integration with Claude Code editor
 - **[Legacy Documentation](docs/LEGACY.md)** - Information about the original PowerShell implementation
